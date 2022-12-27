@@ -13,27 +13,30 @@ Bit	Field			Type	Reset					Description
  6	EN_ILIM			R/W		REG_RST/Watchdog		Enable ILIM Pin
 													 0 - Disable
 											 		 1 - Enable (default: Enable ILIM pin (1))
- 5	IINLIM[5]		R/W		REG_RST					1600mA. Input Current Limit. Offset: 100mA
- 4	IINLIM[4]		R/W		REG_RST					800mA  Range: 100mA (000000) - 3.25A (111111)
- 3	IINLIM[3]		R/W		REG_RST					400mA   Default:0001000 (500mA)
- 2	IINLIM[2]		R/W		REG_RST					200mA   (Actual input current limit is the lower of I2C or ILIM pin)
- 1	IINLIM[1]		R/W		REG_RST					100mA   IINLIM bits are changed automaticallly after input source type detection is completed
- 0	IINLIM[0]		R/W		REG_RST					50mA    PSEL = Hi (USB500) = 500mA. PSEL = Lo = 3.25A
+ 5	IINLIM[5]		R/W		REG_RST					1600mA  Input Current Limit
+ 4	IINLIM[4]		R/W		REG_RST					800mA    Offset: 100mA
+ 3	IINLIM[3]		R/W		REG_RST					400mA    Range: 100mA (000000) - 3.25A (111111)
+ 2	IINLIM[2]		R/W		REG_RST					200mA    Default:0001000 (500mA)
+ 1	IINLIM[1]		R/W		REG_RST					100mA    (Actual input current limit is the lower of I2C or ILIM pin)
+ 0	IINLIM[0]		R/W		REG_RST					50mA     IINLIM bits are changed automaticallly after input source type detection is completed
+															 PSEL = Hi (USB500) = 500mA
+															 PSEL = Lo = 3.25A
 */
-#define BQ2589X_REG_00 0x00
-#define BQ2589X_ENHIZ_MASK 0x80
-#define BQ2589X_ENHIZ_SHIFT 7
-#define BQ2589X_HIZ_ENABLE 1
-#define BQ2589X_HIZ_DISABLE 0
-#define BQ2589X_ENILIM_MASK 0x40
-#define BQ2589X_ENILIM_SHIFT 6
-#define BQ2589X_ENILIM_ENABLE 1
-#define BQ2589X_ENILIM_DISABLE 0
+#define BQ2589X_REG_00         0x00
 
-#define BQ2589X_IINLIM_MASK 0x3F
-#define BQ2589X_IINLIM_SHIFT 0
-#define BQ2589X_IINLIM_BASE 100
-#define BQ2589X_IINLIM_LSB 50
+#define BQ2589X_ENHIZ_MASK     0x80 // BIT 7   10000000
+#define BQ2589X_ENHIZ_SHIFT    7
+#define BQ2589X_HIZ_ENABLE     1
+#define BQ2589X_HIZ_DISABLE    0    // Default
+
+#define BQ2589X_ENILIM_MASK    0x40 // BIT 6   01000000
+#define BQ2589X_ENILIM_SHIFT   6
+#define BQ2589X_ENILIM_ENABLE  1    // Default
+#define BQ2589X_ENILIM_DISABLE 0
+#define BQ2589X_IINLIM_MASK    0x3F // BIT 0-5 00111111
+#define BQ2589X_IINLIM_SHIFT   0
+#define BQ2589X_IINLIM_BASE    100  // 100mA
+#define BQ2589X_IINLIM_LSB     50   // 50mA
 
 /* Register 01h ****************************************************************************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0
@@ -49,23 +52,24 @@ Bit	Field			Type	Reset				Description
  5	BCOLD			R/W		REG_RST/Watchdog	Boost Mode Cold Temperature Monitor Threshold
 												 0 - VBCOLD0 Threshold (Typ. 77%) (default)
 												 1 - VBCOLD1 Threshold (Typ. 80%)
- 4	VINDPM_OS[4]	R/W		REG_RST				1600mV.	Input Voltage Limit Offset
- 3	VINDPM_OS[3]	R/W		REG_RST				800mV  Default: 600mV (00110)
- 2	VINDPM_OS[2]	R/W		REG_RST				400mV   Range: 0mV - 3100mV
- 1	VINDPM_OS[1]	R/W		REG_RST				200mV   Minimum VINDPM threshold is clamped at 3.9V. Maximum VINDPM threshold is clamped at 15.3V
- 0	VINDPM_OS[0]	R/W		REG_RST				100mV   When VBUS at noLoad is ≤ 6V, the VINDPM_OS is used to calculate VINDPM threhold.
-														When VBUS at noLoad is > 6V, the VINDPM_OS multiple by 2 is used to calculate VINDPM threshold.
+ 4	VINDPM_OS[4]	R/W		REG_RST				1600mV	Input Voltage Limit Offset
+ 3	VINDPM_OS[3]	R/W		REG_RST				800mV    Default: 600mV (00110)
+ 2	VINDPM_OS[2]	R/W		REG_RST				400mV    Range: 0mV - 3100mV
+ 1	VINDPM_OS[1]	R/W		REG_RST				200mV    Minimum VINDPM threshold is clamped at 3.9V. Maximum VINDPM threshold is clamped at 15.3V
+ 0	VINDPM_OS[0]	R/W		REG_RST				100mV    When VBUS at noLoad is ≤ 6V, the VINDPM_OS is used to calculate VINDPM threhold
+														 When VBUS at noLoad is > 6V, the VINDPM_OS multiple by 2 is used to calculate VINDPM threshold
 */
-#define BQ2589X_REG_01 0x01
-#define BQ2589X_BHOT_MASK 0xC0
-#define BQ2589X_BHOT_SHIFT 6
-#define BQ2589X_BCOLD_MASK 0x20
-#define BQ2589X_BCOLD_SHIFT 5
-#define BQ2589X_VINDPMOS_MASK 0x1F
-#define BQ2589X_VINDPMOS_SHIFT 0
+#define BQ2589X_REG_01         0x01
 
-#define BQ2589X_VINDPMOS_BASE 0
-#define BQ2589X_VINDPMOS_LSB 100
+#define BQ2589X_BHOT_MASK      0xC0 // BIT 6-7 11000000
+#define BQ2589X_BHOT_SHIFT     6
+#define BQ2589X_BCOLD_MASK     0x20 // BIT 5   00100000
+#define BQ2589X_BCOLD_SHIFT    5
+
+#define BQ2589X_VINDPMOS_MASK  0x1F // BIT 0-4 00011111
+#define BQ2589X_VINDPMOS_SHIFT 0
+#define BQ2589X_VINDPMOS_BASE  0
+#define BQ2589X_VINDPMOS_LSB   100  // 100mV
 
 /* Register 0x02 *****************************************************************************************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0
@@ -94,42 +98,44 @@ Bit	Field			Type	Reset				Description
 												 1 - Force PSEL detection
  0	AUTO_DPDM_EN	R/W		REG_RST				Automatic Input Detection Enable
 												 0 - Disable PSEL detection when VBUS is plugged-in
-												 1 - Enable PEL detection when VBUS is plugged-in (default)
+												 1 - Enable PSEL detection when VBUS is plugged-in (default)
 */
-#define BQ2589X_REG_02 0x02
-#define BQ2589X_CONV_START_MASK 0x80
-#define BQ2589X_CONV_START_SHIFT 7
-#define BQ2589X_CONV_START 1
-#define BQ2589X_CONV_RATE_MASK 0x40
-#define BQ2589X_CONV_RATE_SHIFT 6
-#define BQ2589X_ADC_CONTINUE_ENABLE 1
+#define BQ2589X_REG_02               0x02
+
+#define BQ2589X_CONV_START_MASK      0x80 // BIT 7   10000000
+#define BQ2589X_CONV_START_SHIFT     7
+#define BQ2589X_CONV_START           1
+#define BQ2589X_CONV_RATE_MASK       0x40 // BIT 6   01000000
+#define BQ2589X_CONV_RATE_SHIFT      6
+#define BQ2589X_ADC_CONTINUE_ENABLE  1
 #define BQ2589X_ADC_CONTINUE_DISABLE 0
 
-#define BQ2589X_BOOST_FREQ_MASK 0x20
-#define BQ2589X_BOOST_FREQ_SHIFT 5
-#define BQ2589X_BOOST_FREQ_1500K 0
-#define BQ2589X_BOOST_FREQ_500K 0
+#define BQ2589X_BOOST_FREQ_MASK      0x20 // BIT 5   00100000
+#define BQ2589X_BOOST_FREQ_SHIFT     5
+#define BQ2589X_BOOST_FREQ_1500K     0    // Default
+#define BQ2589X_BOOST_FREQ_500K      1
 
-#define BQ2589X_ICOEN_MASK 0x10
-#define BQ2589X_ICOEN_SHIFT 4
-#define BQ2589X_ICO_ENABLE 1
-#define BQ2589X_ICO_DISABLE 0
-#define BQ2589X_HVDCPEN_MASK 0x08
-#define BQ2589X_HVDCPEN_SHIFT 3
-#define BQ2589X_HVDCP_ENABLE 1
-#define BQ2589X_HVDCP_DISABLE 0
-#define BQ2589X_MAXCEN_MASK 0x04
-#define BQ2589X_MAXCEN_SHIFT 2
-#define BQ2589X_MAXC_ENABLE 1
-#define BQ2589X_MAXC_DISABLE 0
+#define BQ2589X_ICOEN_MASK           0x10 // BIT 4   00010000
+#define BQ2589X_ICOEN_SHIFT          4
+#define BQ2589X_ICO_ENABLE           1    // Default
+#define BQ2589X_ICO_DISABLE          0
 
-#define BQ2589X_FORCE_DPDM_MASK 0x02
-#define BQ2589X_FORCE_DPDM_SHIFT 1
-#define BQ2589X_FORCE_DPDM 1
-#define BQ2589X_AUTO_DPDM_EN_MASK 0x01
-#define BQ2589X_AUTO_DPDM_EN_SHIFT 0
-#define BQ2589X_AUTO_DPDM_ENABLE 1
-#define BQ2589X_AUTO_DPDM_DISABLE 0
+#define BQ2589X_HVDCPEN_MASK         0x08 // N/A for BQ25896
+#define BQ2589X_HVDCPEN_SHIFT        3
+#define BQ2589X_HVDCP_ENABLE         1
+#define BQ2589X_HVDCP_DISABLE        0
+#define BQ2589X_MAXCEN_MASK          0x04
+#define BQ2589X_MAXCEN_SHIFT         2
+#define BQ2589X_MAXC_ENABLE          1
+#define BQ2589X_MAXC_DISABLE         0
+
+#define BQ2589X_FORCE_DPDM_MASK      0x02 // BIT 1   00000010
+#define BQ2589X_FORCE_DPDM_SHIFT     1
+#define BQ2589X_FORCE_DPDM           1
+#define BQ2589X_AUTO_DPDM_EN_MASK    0x01 // BIT 0   00000001
+#define BQ2589X_AUTO_DPDM_EN_SHIFT   0
+#define BQ2589X_AUTO_DPDM_ENABLE     1    // Default
+#define BQ2589X_AUTO_DPDM_DISABLE    0
 
 /* Register 0x03 ***********************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0
