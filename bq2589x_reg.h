@@ -265,19 +265,22 @@ Bit	Field			Type	Reset				Description
 												 0 – 100mV (VRECHG) below VREG (REG06[7:2]) (default)
 												 1 – 200mV (VRECHG) below VREG (REG06[7:2])
 */
-#define BQ2589X_REG_06 0x06
-#define BQ2589X_VREG_MASK 0xFC //0xFC
-#define BQ2589X_VREG_SHIFT 2
-#define BQ2589X_BATLOWV_MASK 0x02
-#define BQ2589X_BATLOWV_SHIFT 1
-#define BQ2589X_BATLOWV_2800MV 0
-#define BQ2589X_BATLOWV_3000MV 1
-#define BQ2589X_VRECHG_MASK 0x01
-#define BQ2589X_VRECHG_SHIFT 0
-#define BQ2589X_VRECHG_100MV 0
-#define BQ2589X_VRECHG_200MV 1
-#define BQ2589X_VREG_BASE 3840
-#define BQ2589X_VREG_LSB 16
+#define BQ2589X_REG_06         0x06
+
+#define BQ2589X_VREG_MASK      0xFC // BIT 2-7 11111100
+#define BQ2589X_VREG_SHIFT     2
+#define BQ2589X_VREG_BASE      3840 // 3.84V Offset
+#define BQ2589X_VREG_LSB       16   // 16mV
+
+#define BQ2589X_BATLOWV_MASK   0x02 // BIT 1   00000010
+#define BQ2589X_BATLOWV_SHIFT  1
+#define BQ2589X_BATLOWV_2800MV 0    // 2.8V
+#define BQ2589X_BATLOWV_3000MV 1    // 3V Default
+
+#define BQ2589X_VRECHG_MASK    0x01 // BIT 0   00000001
+#define BQ2589X_VRECHG_SHIFT   0
+#define BQ2589X_VRECHG_100MV   0    // 100mV Default
+#define BQ2589X_VRECHG_200MV   1    // 200mV
 
 /* Register 0x07 **********************************************************************
  7	 6	 5	 4	 3	 2	 1	 0
@@ -308,38 +311,43 @@ Bit	Field			Type	Reset				Description
 		0C-10C									 0 – 50% of ICHG (REG04[6:0])
 												 1 – 20% of ICHG (REG04[6:0]) (default)
 */
-#define BQ2589X_REG_07 0x07
-#define BQ2589X_EN_TERM_MASK 0x80
-#define BQ2589X_EN_TERM_SHIFT 7
-#define BQ2589X_TERM_ENABLE 1
-#define BQ2589X_TERM_DISABLE 0
+#define BQ2589X_REG_07            0x07
 
-#define BQ2589X_WDT_MASK 0x30
-#define BQ2589X_WDT_SHIFT 4
-#define BQ2589X_WDT_DISABLE 0
-#define BQ2589X_WDT_40S 1
-#define BQ2589X_WDT_80S 2
-#define BQ2589X_WDT_160S 3
-#define BQ2589X_WDT_BASE 0
-#define BQ2589X_WDT_LSB 40
+#define BQ2589X_EN_TERM_MASK      0x80 // BIT 7   10000000  ###### CODE
+#define BQ2589X_EN_TERM_SHIFT     7
+#define BQ2589X_TERM_ENABLE       1    // Default
+#define BQ2589X_TERM_DISABLE      0
 
-#define BQ2589X_EN_TIMER_MASK 0x08
-#define BQ2589X_EN_TIMER_SHIFT 3
+#define BQ2589X_STAT_DIS_MASK     0x40 // BIT 6   01000000
+#define BQ2589X_STAT_DIS_SHIFT    6
+#define BQ2589X_STAT_DIS_ENABLE   0    // Default
+#define BQ2589X_STAT_DIS_DISABLE  1
 
-#define BQ2589X_CHG_TIMER_ENABLE 1
+#define BQ2589X_WDT_MASK          0x30 // BIT 4-5 00110000
+#define BQ2589X_WDT_SHIFT         4
+#define BQ2589X_WDT_DISABLE       0
+#define BQ2589X_WDT_40S           1    // 40s Default
+#define BQ2589X_WDT_80S           2
+#define BQ2589X_WDT_160S          3
+#define BQ2589X_WDT_BASE          0
+#define BQ2589X_WDT_LSB           40
+
+#define BQ2589X_EN_TIMER_MASK     0x08 // BIT 3   00001000
+#define BQ2589X_EN_TIMER_SHIFT    3
+#define BQ2589X_CHG_TIMER_ENABLE  1    // Default
 #define BQ2589X_CHG_TIMER_DISABLE 0
 
-#define BQ2589X_CHG_TIMER_MASK 0x06
-#define BQ2589X_CHG_TIMER_SHIFT 1
-#define BQ2589X_CHG_TIMER_5HOURS 0
-#define BQ2589X_CHG_TIMER_8HOURS 1
-#define BQ2589X_CHG_TIMER_12HOURS 2
+#define BQ2589X_CHG_TIMER_MASK    0x06 // BIT 1-2 00000110
+#define BQ2589X_CHG_TIMER_SHIFT   1
+#define BQ2589X_CHG_TIMER_5HOURS  0
+#define BQ2589X_CHG_TIMER_8HOURS  1
+#define BQ2589X_CHG_TIMER_12HOURS 2    // 12H Default
 #define BQ2589X_CHG_TIMER_20HOURS 3
 
-#define BQ2589X_JEITA_ISET_MASK 0x01
-#define BQ2589X_JEITA_ISET_SHIFT 0
-#define BQ2589X_JEITA_ISET_50PCT 0
-#define BQ2589X_JEITA_ISET_20PCT 1
+#define BQ2589X_JEITA_ISET_MASK   0x01 // BIT 0   00000001
+#define BQ2589X_JEITA_ISET_SHIFT  0
+#define BQ2589X_JEITA_ISET_50PCT  0
+#define BQ2589X_JEITA_ISET_20PCT  1    // 20% Default
 
 /* Register 0x08 ***********************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0
