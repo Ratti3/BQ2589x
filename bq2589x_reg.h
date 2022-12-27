@@ -1,6 +1,25 @@
 #ifndef _BQ2589X_REG_H_
 #define _BQ2589X_REG_H_
-/* Register 00h */
+
+/* Register 00h ***********************************************************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 0	 1	 0	 0	 0
+R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
+
+Bit	Field			Type	Reset					Description
+ 7	EN_HIZ			R/W		REG_RST/Watchdog		Enable HIZ Mode
+													 0 - Disable (default)
+								 					 1 - Enable
+ 6	EN_ILIM			R/W		REG_RST/Watchdog		Enable ILIM Pin
+													 0 - Disable
+											 		 1 - Enable (default: Enable ILIM pin (1))
+ 5	IINLIM[5]		R/W		REG_RST					1600mA. Input Current Limit. Offset: 100mA
+ 4	IINLIM[4]		R/W		REG_RST					800mA  Range: 100mA (000000) - 3.25A (111111)
+ 3	IINLIM[3]		R/W		REG_RST					400mA   Default:0001000 (500mA)
+ 2	IINLIM[2]		R/W		REG_RST					200mA   (Actual input current limit is the lower of I2C or ILIM pin)
+ 1	IINLIM[1]		R/W		REG_RST					100mA   IINLIM bits are changed automaticallly after input source type detection is completed
+ 0	IINLIM[0]		R/W		REG_RST					50mA    PSEL = Hi (USB500) = 500mA. PSEL = Lo = 3.25A
+*/
 #define BQ2589X_REG_00 0x00
 #define BQ2589X_ENHIZ_MASK 0x80
 #define BQ2589X_ENHIZ_SHIFT 7
@@ -16,7 +35,27 @@
 #define BQ2589X_IINLIM_BASE 100
 #define BQ2589X_IINLIM_LSB 50
 
-/* Register 01h */
+/* Register 01h ****************************************************************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 0	 0	 1	 1	 0
+R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
+
+Bit	Field			Type	Reset				Description
+ 7	BHOT[1]			R/W		REG_RST/Watchdog	Boost Mode Hot Temperature Monitor Threshold
+ 6	BHOT[0]			R/W		REG_RST/Watchdog	 00 - VBHOT1 Threshold (34.75%) (default)
+												 01 - VBHOT0 Threshold (Typ. 37.75%)
+												 10 - VBHOT2 Threshold (Typ. 31.25%)
+												 11 - Disable boost mode thermal protection
+ 5	BCOLD			R/W		REG_RST/Watchdog	Boost Mode Cold Temperature Monitor Threshold
+												 0 - VBCOLD0 Threshold (Typ. 77%) (default)
+												 1 - VBCOLD1 Threshold (Typ. 80%)
+ 4	VINDPM_OS[4]	R/W		REG_RST				1600mV.	Input Voltage Limit Offset
+ 3	VINDPM_OS[3]	R/W		REG_RST				800mV  Default: 600mV (00110)
+ 2	VINDPM_OS[2]	R/W		REG_RST				400mV   Range: 0mV - 3100mV
+ 1	VINDPM_OS[1]	R/W		REG_RST				200mV   Minimum VINDPM threshold is clamped at 3.9V. Maximum VINDPM threshold is clamped at 15.3V
+ 0	VINDPM_OS[0]	R/W		REG_RST				100mV   When VBUS at noLoad is ≤ 6V, the VINDPM_OS is used to calculate VINDPM threhold.
+														When VBUS at noLoad is > 6V, the VINDPM_OS multiple by 2 is used to calculate VINDPM threshold.
+*/
 #define BQ2589X_REG_01 0x01
 #define BQ2589X_BHOT_MASK 0xC0
 #define BQ2589X_BHOT_SHIFT 6
@@ -28,7 +67,35 @@
 #define BQ2589X_VINDPMOS_BASE 0
 #define BQ2589X_VINDPMOS_LSB 100
 
-/* Register 0x02 */
+/* Register 0x02 *****************************************************************************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 1	 0	 0	 0	 1
+R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
+
+Bit	Field			Type	Reset				Description
+ 7	CONV_START		R/W		REG_RST/Watchdog	ADC Conversion Start Control
+												 0 - ADC conversion not active (default).
+												 1 - Start ADC Conversion
+												 This bit is read-only when CONV_RATE = 1. The bit stays high during ADC conversion and during input source detection.
+ 6	CONV_RATE		R/W		REG_RST/Watchdog	ADC Conversion Rate Selection
+												 0 - One shot ADC conversion (default)
+												 1 - Start 1s Continuous Conversion
+ 5	BOOST_FREQ		R/W		REG_RST/Watchdog	Boost Mode Frequency Selection
+												 0 - 1.5MHz (default)
+												 1 - 500KHz
+												 Note: Write to this bit is ignored when OTG_CONFIG is enabled.
+ 4	ICO_EN			R/W		REG_RST				Input Current Optimizer (ICO) Enable
+												 0 - Disable ICO Algorithm
+												 1 - Enable ICO Algorithm (default)
+ 3	Reserved		R/W		REG_RST				Reserved (default = 0)
+ 2	Reserved		R/W		REG_RST				Reserved (default = 0)
+ 1	FORCE_DPDM		R/W		REG_RST/Watchdog	Force Input Detection
+												 0 - Not in PSEL detection (default)
+												 1 - Force PSEL detection
+ 0	AUTO_DPDM_EN	R/W		REG_RST				Automatic Input Detection Enable
+												 0 - Disable PSEL detection when VBUS is plugged-in
+												 1 - Enable PEL detection when VBUS is plugged-in (default)
+*/
 #define BQ2589X_REG_02 0x02
 #define BQ2589X_CONV_START_MASK 0x80
 #define BQ2589X_CONV_START_SHIFT 7
@@ -64,7 +131,33 @@
 #define BQ2589X_AUTO_DPDM_ENABLE 1
 #define BQ2589X_AUTO_DPDM_DISABLE 0
 
-/* Register 0x03 */
+/* Register 0x03 ***********************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 1	 1	 0	 1	 0
+R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
+
+Bit	Field			Type	Reset				Description
+ 7	BAT_LOADEN		R/W		REG_RST/Watchdog	Battery Load (IBATLOAD) Enable
+												 0 - Disabled (default)
+												 1 - Enabled
+ 6	WD_RST			R/W		REG_RST/Watchdog	I2C Watchdog Timer Reset
+												 0 - Normal (default)
+												 1 - Reset (Back to 0 after timer reset)
+ 5	OTG_CONFIG		R/W		REG_RST/Watchdog	Boost (OTG) Mode Configuration
+												 0 - OTG Disable (default)
+												 1 - OTG Enable
+ 4	CHG_CONFIG		R/W		REG_RST/Watchdog	Charge Enable Configuration
+												 0 - Charge Disable
+												 1 - Charge Enable (default)
+ 3	SYS_MIN[2]		R/W		REG_RST				0.4V  Minimum System Voltage Limit
+ 2	SYS_MIN[1]		R/W		REG_RST				0.2V   Offset: 3.0V
+ 1	SYS_MIN[02]		R/W		REG_RST				0.1V   Range 3.0V-3.7V
+													   Default: 3.5V (101)
+ 0	MIN_VBAT_SEL	R/W		REG_RST/Watchdog	Minimum Battery Voltage (falling) to exit boost mode
+												 0 - 2.9V (default)
+												 1 - 2.5V
+*/
+
 #define BQ2589X_REG_03 0x03
 #define BQ2589X_BAT_LOADEN_MASK 0x80
 #define BQ2589X_BAT_LOAEN_SHIFT 7
@@ -88,7 +181,23 @@
 #define BQ2589X_SYS_MINV_BASE 3000
 #define BQ2589X_SYS_MINV_LSB 100
 
-/* Register 0x04*/
+/* Register 0x04 *********************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 1	 0	 0	 0	 0	 0
+R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
+
+Bit	Field			Type	Reset				Description
+ 7	EN_PUMPX		R/W		REG_RST/Watchdog	Current pulse control Enable
+												 0 - Disable Current pulse control (default)
+												 1 - Enable Current pulse control (PUMPX_UP and PUMPX_DN)
+ 6	ICHG[6]			R/W		REG_RST/Watchdog	4096mA  Fast Charge Current Limit
+ 5	ICHG[5]			R/W		REG_RST/Watchdog	2048mA   Offset: 0mA
+ 4	ICHG[4]			R/W		REG_RST/Watchdog	1024mA   Range: 0mA (0000000) – 3008mA (0101111)
+ 3	ICHG[3]			R/W		REG_RST/Watchdog	512mA    Default: 2048mA (0100000)
+ 2	ICHG[2]			R/W		REG_RST/Watchdog	256mA    Note: ICHG=000000 (0mA) disables charge
+ 1	ICHG[1]			R/W		REG_RST/Watchdog	128mA    ICHG > 0101111 (3008mA) is clamped to register value
+ 0	ICHG[0]			R/W		REG_RST/Watchdog	64mA     0101111 (3008mA)
+*/
 #define BQ2589X_REG_04 0x04
 #define BQ2589X_EN_PUMPX_MASK 0x80
 #define BQ2589X_EN_PUMPX_SHIFT 7
@@ -99,7 +208,21 @@
 #define BQ2589X_ICHG_BASE 0
 #define BQ2589X_ICHG_LSB 64
 
-/* Register 0x05*/
+/* Register 0x05 ***************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 1	 0	 0	 1	 1
+R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
+
+Bit	Field			Type	Reset				Description
+ 7	IPRECHG[3]		R/W		REG_RST/Watchdog	512mA  Precharge Current Limit
+ 6	IPRECHG[2]		R/W		REG_RST/Watchdog	256mA   Offset: 64mA
+ 5	IPRECHG[1]		R/W		REG_RST/Watchdog	128mA   Range: 64mA – 1024mA
+ 4	IPRECHG[0]		R/W		REG_RST/Watchdog	64mA    Default: 128mA (0001)
+ 3	ITERM[3]		R/W		REG_RST/Watchdog	512mA  Termination Current Limit
+ 2	ITERM[2]		R/W		REG_RST/Watchdog	256mA   Offset: 64mA
+ 1	ITERM[1]		R/W		REG_RST/Watchdog	128mA   Range: 64mA – 1024mA
+ 0	ITERM[0]		R/W		REG_RST/Watchdog	64mA    Default: 256mA (0011)
+*/
 #define BQ2589X_REG_05 0x05
 #define BQ2589X_IPRECHG_MASK 0xF0
 #define BQ2589X_IPRECHG_SHIFT 4
@@ -110,7 +233,25 @@
 #define BQ2589X_ITERM_BASE 64
 #define BQ2589X_ITERM_LSB 64
 
-/* Register 0x06*/
+/* Register 0x06 ****************************************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 1	 0	 1	 1	 1	 1	 0
+R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
+
+Bit	Field			Type	Reset				Description
+ 7	VREG[5]			R/W		REG_RST/Watchdog	512mV  Charge Voltage Limit
+ 6	VREG[4]			R/W		REG_RST/Watchdog	256mV   Offset: 3.840V
+ 5	VREG[3]			R/W		REG_RST/Watchdog	128mV   Range: 3.840V – 4.608V (110000)
+ 4	VREG[2]			R/W		REG_RST/Watchdog	64mV    Default: 4.208V (010111)
+ 3 	VREG[1]			R/W		REG_RST/Watchdog	32mV    Note: VREG > 110000 (4.608V) is clamped to register value 110000 (4.608V)
+ 2	VREG[0]			R/W		REG_RST/Watchdog	16mV
+ 1	BATLOWV			R/W		REG_RST/Watchdog	Battery Precharge to Fast Charge Threshold
+												 0 – 2.8V
+												 1 – 3.0V (default)
+ 0	VRECHG			R/W		REG_RST/Watchdog	Battery Recharge Threshold Offset (below Charge Voltage Limit)
+												 0 – 100mV (VRECHG) below VREG (REG06[7:2]) (default)
+												 1 – 200mV (VRECHG) below VREG (REG06[7:2])
+*/
 #define BQ2589X_REG_06 0x06
 #define BQ2589X_VREG_MASK 0xFC //0xFC
 #define BQ2589X_VREG_SHIFT 2
@@ -125,7 +266,35 @@
 #define BQ2589X_VREG_BASE 3840
 #define BQ2589X_VREG_LSB 16
 
-/* Register 0x07*/
+/* Register 0x07 **********************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 1	 0	 0	 1	 1	 1	 0	 1
+R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
+
+Bit	Field			Type	Reset				Description
+ 7	EN_TERM			R/W		REG_RST/Watchdog	Charging Termination Enable
+												 0 – Disable
+												 1 – Enable (default)
+ 6	STAT_DIS		R/W		REG_RST/Watchdog	STAT Pin Disable
+												 0 – Enable STAT pin function (default)
+												 1 – Disable STAT pin function
+ 5	WATCHDOG[1]		R/W		REG_RST/Watchdog	I2C Watchdog Timer Setting
+ 4	WATCHDOG[0]		R/W		REG_RST/Watchdog	 00 – Disable watchdog timer
+												 01 – 40s (default)
+												 10 – 80s
+												 11 – 160s
+ 3	EN_TIMER		R/W		REG_RST/Watchdog	Charging Safety Timer Enable
+												 0 – Disable
+												 1 – Enable (default)
+ 2	CHG_TIMER[1]	R/W		REG_RST/Watchdog	Fast Charge Timer Setting
+ 1	CHG_TIMER[0]	R/W		REG_RST/Watchdog	 00 – 5 hrs
+												 01 – 8 hrs
+												 10 – 12 hrs (default)
+												 11 – 20 hrs
+ 0	JEITA_ISET		R/W		REG_RST/Watchdog	JEITA Low Temperature Current Setting
+		0C-10C									 0 – 50% of ICHG (REG04[6:0])
+												 1 – 20% of ICHG (REG04[6:0]) (default)
+*/
 #define BQ2589X_REG_07 0x07
 #define BQ2589X_EN_TERM_MASK 0x80
 #define BQ2589X_EN_TERM_SHIFT 7
@@ -159,7 +328,25 @@
 #define BQ2589X_JEITA_ISET_50PCT 0
 #define BQ2589X_JEITA_ISET_20PCT 1
 
-/* Register 0x08*/
+/* Register 0x08 ***********************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 0	 0	 0	 1	 1
+R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
+
+Bit	Field			Type	Reset				Description
+ 7	BAT_COMP[2]		R/W		REG_RST/Watchdog	80mΩ  IR Compensation Resistor Setting
+ 6	BAT_COMP[1]		R/W		REG_RST/Watchdog	40mΩ   Range: 0 – 140mΩ
+ 5	BAT_COMP[0]		R/W		REG_RST/Watchdog	20mΩ   Default: 0Ω (000) (i.e. Disable IRComp)
+ 4	VCLAMP[2]		R/W		REG_RST/Watchdog	128mV IR Compensation Voltage Clamp
+ 3	VCLAMP[1]		R/W		REG_RST/Watchdog	64mV   Offset: 0mV
+ 2	VCLAMP[0]		R/W		REG_RST/Watchdog	32mV   Range: 0-224mV
+												       Default: 0mV (000)
+ 1	TREG[1]			R/W		REG_RST/Watchdog	Thermal Regulation Threshold above VREG (REG06[7:2])
+ 0	TREG[0]			R/W		REG_RST/Watchdog	 00 – 60°C
+												 01 – 80°C
+												 10 – 100°C
+												 11 – 120°C (default)
+*/
 #define BQ2589X_REG_08 0x08
 #define BQ2589X_BAT_COMP_MASK 0xE0
 #define BQ2589X_BAT_COMP_SHIFT 5
@@ -177,7 +364,40 @@
 #define BQ2589X_VCLAMP_BASE 0
 #define BQ2589X_VCLAMP_LSB 32
 
-/* Register 0x09*/
+/* Register 0x09 *************************************************************************************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 1	 0	 0	 0	 1	 0	 0
+R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
+
+Bit	Field			Type	Reset				Description
+ 7	FORCE_ICO		R/W		REG_RST/Watchdog	Force Start Input Current Optimizer (ICO)
+												 0 – Do not force ICO (default)
+												 1 – Force ICO
+												 Note: This bit is can only be set only and always returns to 0 after ICO starts
+ 6	TMR2X_EN		R/W		REG_RST/Watchdog	Safety Timer Setting during DPM or Thermal Regulation
+												 0 – Safety timer not slowed by 2X during input DPM or thermal regulation
+												 1 – Safety timer slowed by 2X during input DPM or thermal regulation (default)
+ 5	BATFET_DIS		R/W		REG_RST				Force BATFET off to enable ship mode
+												 0 – Allow BATFET turn on (default)
+												 1 – Force BATFET off
+ 4	JEITA_VSET		R/W		REG_RST/Watchdog	JEITA High Temperature Voltage Setting
+		45-60C									 0 – Set Charge Voltage to VREG-200mV during JEITA hig temperature (default)
+												 1 – Set Charge Voltage to VREG during JEITA high temperature
+ 3	BATFET_DLY		R/W		REG_RST				BATFET turn off delay control
+												 0 – BATFET turn off immediately when BATFET_DIS bit is set (default)
+												 1 – BATFET turn off delay by tSM_DLY when BATFET_DIS bit is set
+ 2	BATFET_RST_EN	R/W		REG_RST				BATFET full system reset enable
+												 0 – Disable BATFET full system reset
+												 1 – Enable BATFET full system reset (default)
+ 1	PUMPX_UP		R/W		REG_RST/Watchdog	Current pulse control voltage up enable
+												 0 – Disable (default)
+												 1 – Enable
+												 Note: This bit is can only be set when EN_PUMPX bit is set and returns to 0 after current pulse control sequence is completed
+ 0	PUMPX_DN		R/W		REG_RST/Watchdog	Current pulse control voltage down enable
+												 0 – Disable (default)
+												 1 – Enable
+												 Note: This bit is can only be set when EN_PUMPX bit is set and returns to 0 after current pulse control sequence is completed
+*/
 #define BQ2589X_REG_09 0x09
 #define BQ2589X_FORCE_ICO_MASK 0x80
 #define BQ2589X_FORCE_ICO_SHIFT 7
@@ -201,7 +421,28 @@
 #define BQ2589X_PUMPX_DOWN_SHIFT 0
 #define BQ2589X_PUMPX_DOWN 1
 
-/* Register 0x0A*/
+/* Register 0x0A **********************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 1	 1	 1	 0	 0	 1	 1
+R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
+
+Bit	Field			Type	Reset				Description
+ 7	BOOSTV[3]		R/W		REG_RST/Watchdog	512mV  Boost Mode Voltage Regulation
+ 6	BOOSTV[2]		R/W		REG_RST/Watchdog	256mV   Offset: 4.55V
+ 5	BOOSTV[1]		R/W		REG_RST				128mV   Range: 4.55V – 5.51V
+ 4	BOOSTV[0]		R/W		REG_RST/Watchdog	64mV    Default:4.998V(0111)
+ 3	PFM_OTG_DIS		R/W		REG_RST				PFM mode allowed in boost mode
+												 0 – Allow PFM in boost mode (default)
+												 1 – Disable PFM in boost mode
+ 2	BOOST_LIM[2]	R/W		REG_RST/Watchdog	000: 0.5A      Boost Mode Current Limit
+ 1	BOOST_LIM[1]	R/W		REG_RST/Watchdog	001: 0.75A      Default: 1.4A (011)
+ 0	BOOST_LIM[0]	R/W		REG_RST/Watchdog	010: 1.2A
+												011: 1.4A
+												100: 1.65A
+												101: 1.875A
+												110: 2.15A
+												111: Reserved
+*/
 #define BQ2589X_REG_0A 0x0A
 #define BQ2589X_BOOSTV_MASK 0xF0
 #define BQ2589X_BOOSTV_SHIFT 4
@@ -219,7 +460,31 @@
 #define BQ2589X_BOOST_LIM_2100MA 0x06
 #define BQ2589X_BOOST_LIM_2400MA 0x07
 
-/* Register 0x0B*/
+/* Register 0x0B ********************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ x	 x	 x	 x	 x	 x	 x	 x
+ R	 R	 R	 R	 R	 R	 R	 R
+
+Bit	Field			Type	Reset				Description
+ 7	VBUS_STAT[2]	R		N/A					VBUS Status register
+ 6	VBUS_STAT[1]	R		N/A					 000: No Input
+ 5	VBUS_STAT[0]	R		N/A					 001: USB Host SDP
+												 010: Adapter (3.25A)
+												 111: OTG
+												 Note: Software current limit is reported in IINLIM register
+ 4	CHRG_STAT[1]	R		N/A					Charging Status
+ 3	CHRG_STAT[0]	R		N/A					 00 – Not Charging
+												 01 – Pre-charge ( < VBATLOWV)
+												 10 – Fast Charging
+												 11 – Charge Termination Done
+ 2	PG_STAT			R		N/A					Power Good Status
+												 0 – Not Power Good
+												 1 – Power Good
+ 1	Reserved		R		N/A					Reserved: Always reads 1
+ 0	VSYS_STAT		R		N/A					VSYS Regulation Status
+												 0 – Not in VSYSMIN regulation (BAT > VSYSMIN)
+												 1 – In VSYSMIN regulation (BAT < VSYSMIN)
+*/
 #define BQ2589X_REG_0B 0x0B
 #define BQ2589X_VBUS_STAT_MASK 0xE0
 #define BQ2589X_VBUS_STAT_SHIFT 5
@@ -237,7 +502,38 @@
 #define BQ2589X_VSYS_STAT_MASK 0x01
 #define BQ2589X_VSYS_STAT_SHIFT 0
 
-/* Register 0x0C*/
+/* Register 0x0C ************************************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ x	 x	 x	 x	 x	 x	 x	 x
+ R	 R	 R	 R	 R	 R	 R	 R
+
+Bit	Field			Type	Reset				Description
+ 7	WATCHDOG_FAULT	R		N/A					Watchdog Fault Status
+												 Status 0 – Normal
+												 1 - Watchdog timer expiration
+ 6	BOOST_FAULT		R		N/A					Boost Mode Fault Status
+												 0 – Normal
+												 1 - VBUS overloaded in OTG, or VBUS OVP, or battery is too low in boost mode
+ 5	CHRG_FAULT[1]	R		N/A					Charge Fault Status
+ 4	CHRG_FAULT[0]	R		N/A					 00 – Normal
+												 01 – Input fault (VBUS > VACOV or VBAT < VBUS < VVBUSMIN(typical 3.8V))
+												 10 - Thermal shutdown
+												 11 – Charge Safety Timer Expiration
+ 3	BAT_FAULT		R		N/A					Battery Fault Status
+												 0 – Normal
+												 1 – BATOVP (VBAT > VBATOVP)
+ 2	NTC_FAULT[2]	R		N/A					NTC Fault Status
+ 1	NTC_FAULT[1]	R		N/A					 Buck Mode:
+ 0	NTC_FAULT[0]	R		N/A					 000 – Normal
+												 010 – TS Warm
+												 011 – TS Cool
+												 101 – TS Cold
+												 110 – TS Hot
+												 Boost Mode:
+												 000 – Normal
+												 101 – TS Cold
+												 110 – TS Hot
+*/
 #define BQ2589X_REG_0C 0x0c
 #define BQ2589X_FAULT_WDT_MASK 0x80
 #define BQ2589X_FAULT_WDT_SHIFT 7
@@ -262,7 +558,25 @@
 #define BQ2589X_FAULT_NTC_COLD 5
 #define BQ2589X_FAULT_NTC_HOT 6
 
-/* Register 0x0D*/
+/* Register 0x0D ********************************************************************************************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 1	 0	 0	 1	 0
+R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
+
+Bit	Field			Type	Reset				Description
+ 7	FORCE_VINDPM	R/W		REG_RST				VINDPM Threshold Setting Method
+												 0 – Run Relative VINDPM Threshold (default)
+												 1 – Run Absolute VINDPM Threshold
+												 Note: Register is reset to default value when input source is plugged-in
+ 6	VINDPM[6]		R/W		REG_RST				6400mV  Absolute VINDPM Threshold
+ 5	VINDPM[5]		R/W		REG_RST				3200mV   Offset: 2.6V
+ 4	VINDPM[4]		R/W		REG_RST				1600mV   Range: 3.9V (0001101) – 15.3V (1111111)
+ 3	VINDPM[3]		R/W		REG_RST				800mV    Default: 4.4V (0010010)
+ 2	VINDPM[2]		R/W		REG_RST				400mV    Note: Value < 0001101 is clamped to 3.9V (0001101)
+ 1	VINDPM[1]		R/W		REG_RST				200mV    Register is read only when FORCE_VINDPM=0 and can be written by internal control based on relative VINDPM threshold setting
+ 0	VINDPM[0]		R/W		REG_RST				100mV    Register can be read/write when FORCE_VINDPM = 1
+														 Note: Register is reset to default value when input source is plugged-in
+*/
 #define BQ2589X_REG_0D 0x0D
 #define BQ2589X_FORCE_VINDPM_MASK 0x80
 #define BQ2589X_FORCE_VINDPM_SHIFT 7
@@ -274,7 +588,23 @@
 #define BQ2589X_VINDPM_BASE 2600
 #define BQ2589X_VINDPM_LSB 100
 
-/* Register 0x0E*/
+/* Register 0x0E **********************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 0	 0	 0	 0	 0
+ R	 R	 R	 R	 R	 R	 R	 R
+
+Bit	Field			Type	Reset				Description
+ 7	THERM_STAT		R		N/A					Thermal Regulation Status
+												 0 – Normal
+												 1 – In Thermal Regulation
+ 6	BATV[6]			R		N/A					1280mV  ADC conversion of Battery Voltage (VBAT)
+ 5	BATV[5]			R		N/A					640mV    Offset: 2.304V
+ 4	BATV[4]			R		N/A					320mV    Range: 2.304V (0000000) – 4.848V (1111111)
+ 3	BATV[3]			R		N/A					160mV    Default: 2.304V (0000000)
+ 2	BATV[2]			R		N/A					80mV
+ 1	BATV[1]			R		N/A					40mV
+ 0	BATV[0]			R		N/A					20mV
+*/
 #define BQ2589X_REG_0E 0x0E
 #define BQ2589X_THERM_STAT_MASK 0x80
 #define BQ2589X_THERM_STAT_SHIFT 7
@@ -283,21 +613,65 @@
 #define BQ2589X_BATV_BASE 2304
 #define BQ2589X_BATV_LSB 20
 
-/* Register 0x0F*/
+/* Register 0x0F **********************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 0	 0	 0	 0	 0
+ R	 R	 R	 R	 R	 R	 R	 R
+
+Bit	Field			Type	Reset				Description
+ 7	Reserved		R		N/A					Reserved: Always reads 0
+ 6	SYSV[6]			R		N/A					1280mV  ADDC conversion of System Voltage (VSYS)
+ 5	SYSV[5]			R		N/A					640mV    Offset: 2.304V
+ 4	SYSV[4]			R		N/A					320mV	 Range: 2.304V (0000000) – 4.848V (1111111)
+ 3	SYSV[3]			R		N/A					160mV	 Default: 2.304V (0000000)
+ 2	SYSV[2]			R		N/A					80mV
+ 1	SYSV[1]			R		N/A					40mV
+ 0	SYSV[0]			R		N/A					20mV
+*/
 #define BQ2589X_REG_0F 0x0F
 #define BQ2589X_SYSV_MASK 0x7F
 #define BQ2589X_SYSV_SHIFT 0
 #define BQ2589X_SYSV_BASE 2304
 #define BQ2589X_SYSV_LSB 20
 
-/* Register 0x10*/
+/* Register 0x10 **********************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 0	 0	 0	 0	 0
+ R	 R	 R	 R	 R	 R	 R	 R
+
+Bit	Field			Type	Reset				Description
+ 7	Reserved		R		N/A					Reserved: Always reads 0
+ 6	TSPCT[6]		R		N/A					29.76%  ADC conversion of TS Voltage (TS) as percentage of REGN
+ 5	TSPCT[5]		R		N/A					14.88%   Offset: 21%
+ 4	TSPCT[4]		R		N/A					7.44%    Range 21% (0000000) – 80% (1111111)
+ 3	TSPCT[3]		R		N/A					3.72%    Default: 21% (0000000)
+ 2	TSPCT[2]		R		N/A					1.86%
+ 1	TSPCT[1]		R		N/A					0.93%
+ 0	TSPCT[0]		R		N/A					0.465%
+*/
 #define BQ2589X_REG_10 0x10
 #define BQ2589X_TSPCT_MASK 0x7F
 #define BQ2589X_TSPCT_SHIFT 0
 #define BQ2589X_TSPCT_BASE 21
 #define BQ2589X_TSPCT_LSB 0.465 //should be 0.465,kernel does not support float
 
-/* Register 0x11*/
+/* Register 0x11 ******************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 0	 0	 0	 0	 0
+ R	 R	 R	 R	 R	 R	 R	 R
+
+Bit	Field			Type	Reset				Description
+ 7	VBUS_GD			R		N/A					VBUS Good Status
+												 0 – Not VBUS attached
+												 1 – VBUS Attached
+ 6	VBUSV[6]		R		N/A					6400mV  ADC conversion of VBUS voltage (VBUS)
+ 5	VBUSV[5]		R		N/A					3200mV   Offset: 2.6V
+ 4	VBUSV[4]		R		N/A					1600mV   Range 2.6V (0000000) – 15.3V (1111111)
+ 3	VBUSV[3]		R		N/A					800mV    Default: 2.6V (0000000)
+ 2	VBUSV[2]		R		N/A					400mV
+ 1	VBUSV[1]		R		N/A					200mV
+ 0	VBUSV[0]		R		N/A					100mV
+*/
 #define BQ2589X_REG_11 0x11
 #define BQ2589X_VBUS_GD_MASK 0x80
 #define BQ2589X_VBUS_GD_SHIFT 7
@@ -306,14 +680,46 @@
 #define BQ2589X_VBUSV_BASE 2600
 #define BQ2589X_VBUSV_LSB 100
 
-/* Register 0x12*/
+/* Register 0x12 ****************************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 0	 0	 0	 0	 0
+ R	 R	 R	 R	 R	 R	 R	 R
+
+Bit	Field			Type	Reset				Description
+ 7	Unused			R		N/A					Always reads 0
+ 6	ICHGR[6]		R		N/A					3200mA  ADC conversion of Charge Current (IBAT) when VBAT > VBATSHORT
+ 5	ICHGR[5]		R		N/A					1600mA   Offset: 0mA
+ 4	ICHGR[4]		R		N/A					800mA    Range 0mA (0000000) – 6350mA (1111111)
+ 3	ICHGR[3]		R		N/A					400mA    Default: 0mA (0000000)
+ 2	ICHGR[2]		R		N/A					200mA    Note: This register returns 0000000 for VBAT < VBATSHORT
+ 1	ICHGR[1]		R		N/A					100mA
+ 0	ICHGR[0]		R		N/A					50mA
+*/
 #define BQ2589X_REG_12 0x12
 #define BQ2589X_ICHGR_MASK 0x7F
 #define BQ2589X_ICHGR_SHIFT 0
 #define BQ2589X_ICHGR_BASE 0
 #define BQ2589X_ICHGR_LSB 50
 
-/* Register 0x13*/
+/* Register 0x13
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 0	 0	 0	 0	 0
+ R	 R	 R	 R	 R	 R	 R	 R
+
+Bit	Field			Type	Reset				Description
+ 7	VDPM_STAT		R		N/A					VINDPM Status
+												 0 – Not in VINDPM
+												 1 – VINDPM
+ 6	IDPM_STAT		R		N/A					IINDPM Status
+												 0 – Not in IINDPM
+												 1 – IINDPM
+ 5	IDPM_LIM[5]		R		N/A					1600mA  Input Current Limit in effect while Input Current Optimizer (ICO) is enabled
+ 4	IDPM_LIM[4]		R		N/A					800mA    Offset: 100mA (default)
+ 3	IDPM_LIM[3]		R		N/A					400mA    Range 100mA (0000000) – 3.25mA (1111111)
+ 2	IDPM_LIM[2]		R		N/A					200mA
+ 1	IDPM_LIM[1]		R		N/A					100mA
+ 0	IDPM_LIM[0]		R		N/A					50mA
+*/
 #define BQ2589X_REG_13 0x13
 #define BQ2589X_VDPM_STAT_MASK 0x80
 #define BQ2589X_VDPM_STAT_SHIFT 7
@@ -324,7 +730,27 @@
 #define BQ2589X_IDPM_LIM_BASE 100
 #define BQ2589X_IDPM_LIM_LSB 50
 
-/* Register 0x14*/
+/* Register 0x14 ******************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0
+ 0	 0	 0	 0	 0	 0	 1	 0
+R/W	 R	 R	 R	 R	 R	 R	 R
+
+Bit	Field			Type	Reset				Description
+ 7	REG_RST			R/W		N/A					Register Reset
+												 0 – Keep current register setting (default)
+												 1 – Reset to default register value and reset safety timer
+												 Note: Reset to 0 after register reset is completed
+ 6	ICO_OPTIMIZED	R		N/A					Input Current Optimizer (ICO) Status
+												 0 – Optimization is in progress
+												 1 – Maximum Input Current Detected
+ 5	PN[2]			R		N/A					Device Configuration
+ 4	PN[1]			R		N/A					 000: bq25896
+ 3	PN[0]			R		N/A					
+ 2	TS_PROFILE		R		N/A					Temperature Profile
+												 1- JEITA (default)
+ 1	DEV_REV[1]		R		N/A					Device Revision
+ 0	DEV_REV[0]		R		N/A					 10
+*/
 #define BQ2589X_REG_14 0x14
 #define BQ2589X_RESET_MASK 0x80
 #define BQ2589X_RESET_SHIFT 7

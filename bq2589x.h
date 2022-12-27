@@ -1,18 +1,18 @@
 #ifndef _BQ2589X_H
-
 #define _BQ2589X_H
 
 #include <Wire.h>
+#include <Arduino.h>
 
-#include "bq2589x_reg.h"
+#include "BQ2589x_reg.h"
 
-#define BQ25895_ADDR (0x6A);
+#define BQ2589x_ADDR (0x6B);
 
 #define I2C_OK 0 //0:success
 #define I2C_ERR 1
 
-#define SCL_PIN 5
-#define SDA_PIN 4
+#define SDA_PIN 2
+#define SCL_PIN 3
 
 #define BQ2589X_OK 0
 #define BQ2589X_ERR 1 //  ERR>0
@@ -35,6 +35,7 @@ typedef enum bq2589x_part_no
     BQ25890 = 0x03,
     BQ25892 = 0x00,
     BQ25895 = 0x07,
+    BQ25896 = 0x00,
 } bq2589x_part_no;
 
 

@@ -1,5 +1,4 @@
-
-#include "bq2589x.h"
+#include "BQ2589x.h"
 
 bq2589x::bq2589x(/* args */)
 {
@@ -41,7 +40,7 @@ int bq2589x::begin(uint8_t addr, TwoWire *theWire)
 int bq2589x::begin(void)
 {
 
-    _i2caddr = BQ25895_ADDR;
+    _i2caddr = BQ2589x_ADDR;
     _wire = &Wire;
     return reset_chip();
 }
@@ -49,7 +48,7 @@ int bq2589x::begin(void)
 int bq2589x::begin(TwoWire *theWire)
 {
     _wire = theWire;
-    _i2caddr = BQ25895_ADDR;
+    _i2caddr = BQ2589x_ADDR;
     return reset_chip();
 }
 
