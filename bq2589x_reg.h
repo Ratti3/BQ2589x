@@ -157,35 +157,38 @@ Bit	Field			Type	Reset				Description
 												 1 - Charge Enable (default)
  3	SYS_MIN[2]		R/W		REG_RST				0.4V  Minimum System Voltage Limit
  2	SYS_MIN[1]		R/W		REG_RST				0.2V   Offset: 3.0V
- 1	SYS_MIN[02]		R/W		REG_RST				0.1V   Range 3.0V-3.7V
+ 1	SYS_MIN[0]		R/W		REG_RST				0.1V   Range 3.0V-3.7V
 													   Default: 3.5V (101)
  0	MIN_VBAT_SEL	R/W		REG_RST/Watchdog	Minimum Battery Voltage (falling) to exit boost mode
 												 0 - 2.9V (default)
 												 1 - 2.5V
 */
 
-#define BQ2589X_REG_03 0x03
-#define BQ2589X_BAT_LOADEN_MASK 0x80
-#define BQ2589X_BAT_LOAEN_SHIFT 7
-#define BQ2589X_WDT_RESET_MASK 0x40
-#define BQ2589X_WDT_RESET_SHIFT 6
-#define BQ2589X_WDT_RESET 1
+#define BQ2589X_REG_03             0x03
 
-#define BQ2589X_OTG_CONFIG_MASK 0x20
-#define BQ2589X_OTG_CONFIG_SHIFT 5
-#define BQ2589X_OTG_ENABLE 1
-#define BQ2589X_OTG_DISABLE 0
+#define BQ2589X_BAT_LOADEN_MASK    0x80 // BIT 7   10000000 ############# NEED TO CODE
+#define BQ2589X_BAT_LOADEN_SHIFT   7
+#define BQ2589X_BAT_LOADEN_ENABLE  1
+#define BQ2589X_BAT_LOADEN_DISABLE 0    // Default
 
-#define BQ2589X_CHG_CONFIG_MASK 0x10
-#define BQ2589X_CHG_CONFIG_SHIFT 4
-#define BQ2589X_CHG_ENABLE 1
-#define BQ2589X_CHG_DISABLE 0
+#define BQ2589X_WDT_RESET_MASK     0x40 // BIT 6   01000000
+#define BQ2589X_WDT_RESET_SHIFT    6
+#define BQ2589X_WDT_RESET          1
 
-#define BQ2589X_SYS_MINV_MASK 0x0E
-#define BQ2589X_SYS_MINV_SHIFT 1
+#define BQ2589X_OTG_CONFIG_MASK    0x20 // BIT 5   00100000
+#define BQ2589X_OTG_CONFIG_SHIFT   5
+#define BQ2589X_OTG_ENABLE         1
+#define BQ2589X_OTG_DISABLE        0    // Default
 
-#define BQ2589X_SYS_MINV_BASE 3000
-#define BQ2589X_SYS_MINV_LSB 100
+#define BQ2589X_CHG_CONFIG_MASK    0x10 // BIT 4   00010000
+#define BQ2589X_CHG_CONFIG_SHIFT   4
+#define BQ2589X_CHG_ENABLE         1    // Default
+#define BQ2589X_CHG_DISABLE        0
+
+#define BQ2589X_SYS_MINV_MASK      0x0E // BIT 1-3 00001110
+#define BQ2589X_SYS_MINV_SHIFT     1
+#define BQ2589X_SYS_MINV_BASE      3000 // 3V Offset
+#define BQ2589X_SYS_MINV_LSB       100  // 0.1V
 
 /* Register 0x04 *********************************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0
@@ -201,18 +204,20 @@ Bit	Field			Type	Reset				Description
  4	ICHG[4]			R/W		REG_RST/Watchdog	1024mA   Range: 0mA (0000000) – 3008mA (0101111)
  3	ICHG[3]			R/W		REG_RST/Watchdog	512mA    Default: 2048mA (0100000)
  2	ICHG[2]			R/W		REG_RST/Watchdog	256mA    Note: ICHG=000000 (0mA) disables charge
- 1	ICHG[1]			R/W		REG_RST/Watchdog	128mA    ICHG > 0101111 (3008mA) is clamped to register value
- 0	ICHG[0]			R/W		REG_RST/Watchdog	64mA     0101111 (3008mA)
+ 1	ICHG[1]			R/W		REG_RST/Watchdog	128mA    ICHG > 0101111 (3008mA) is clamped to register value 0101111 (3008mA)
+ 0	ICHG[0]			R/W		REG_RST/Watchdog	64mA
 */
-#define BQ2589X_REG_04 0x04
-#define BQ2589X_EN_PUMPX_MASK 0x80
+#define BQ2589X_REG_04         0x04
+
+#define BQ2589X_EN_PUMPX_MASK  0x80 // BIT 7   10000000
 #define BQ2589X_EN_PUMPX_SHIFT 7
-#define BQ2589X_PUMPX_ENABLE 1
-#define BQ2589X_PUMPX_DISABLE 0
-#define BQ2589X_ICHG_MASK 0x7F
-#define BQ2589X_ICHG_SHIFT 0
-#define BQ2589X_ICHG_BASE 0
-#define BQ2589X_ICHG_LSB 64
+#define BQ2589X_PUMPX_ENABLE   1
+#define BQ2589X_PUMPX_DISABLE  0    // Default
+
+#define BQ2589X_ICHG_MASK      0x7F // BIT 0-6 01111111
+#define BQ2589X_ICHG_SHIFT     0
+#define BQ2589X_ICHG_BASE      0
+#define BQ2589X_ICHG_LSB       64   // 64mA
 
 /* Register 0x05 ***************************************************************
  7	 6	 5	 4	 3	 2	 1	 0
@@ -229,15 +234,17 @@ Bit	Field			Type	Reset				Description
  1	ITERM[1]		R/W		REG_RST/Watchdog	128mA   Range: 64mA – 1024mA
  0	ITERM[0]		R/W		REG_RST/Watchdog	64mA    Default: 256mA (0011)
 */
-#define BQ2589X_REG_05 0x05
-#define BQ2589X_IPRECHG_MASK 0xF0
+#define BQ2589X_REG_05        0x05
+
+#define BQ2589X_IPRECHG_MASK  0xF0 // BIT 4-7 11110000
 #define BQ2589X_IPRECHG_SHIFT 4
-#define BQ2589X_ITERM_MASK 0x0F
-#define BQ2589X_ITERM_SHIFT 0
-#define BQ2589X_IPRECHG_BASE 64
-#define BQ2589X_IPRECHG_LSB 64
-#define BQ2589X_ITERM_BASE 64
-#define BQ2589X_ITERM_LSB 64
+#define BQ2589X_IPRECHG_BASE  64 // 64mA Offset
+#define BQ2589X_IPRECHG_LSB   64 // 64mA
+
+#define BQ2589X_ITERM_MASK    0x0F // BIT 0-3 00001111
+#define BQ2589X_ITERM_SHIFT   0
+#define BQ2589X_ITERM_BASE    64   // 64mA Offset
+#define BQ2589X_ITERM_LSB     64   // 64mA
 
 /* Register 0x06 ****************************************************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0
