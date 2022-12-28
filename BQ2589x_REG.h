@@ -1,6 +1,26 @@
 #ifndef _BQ2589X_REG_H_
 #define _BQ2589X_REG_H_
 
+/* SUGGESTED SETTINGS - RUN IN THIS ORDER
+	0x14: 10000110 Full BQ reset
+
+	0x07: 1xxxxxxx Enable Charging Termination [default]
+		  x1xxxxxx Disable STAT PIN [x0xxxxxx default]
+		  xx00xxxx Disable I2C Watchdog Timer [xx01xxxx default]
+		  xxxxx01x Set Charge Timer to 8 hrs [xxxxx10x 12 hrs default]
+	0x00: x0xxxxxx Disable ILIM PIN [x1xxxxxx default]
+		  xx111111 Set Input Current Limit to 3250mA [xx001010 default]
+	0x02: 11xxxxxx Enable ADC Conversion and Set Rate [00xxxxxx default]
+	0x03: xx1xxxxx Enable OTG [xx0xxxxx default]
+		  xxxx101x Set Minimum System Voltage Limit to 3.5V [default]
+	0x04: x0101111 Set Fast Charge Current Limit to 3008mA [x0100000 2048mA default]
+	0x05: 0001xxxx Set Precharge Current Limit to 128mA [default]
+		  xxxx0011 Set Termination Current Limit to 256mA [default]
+	0x06: 01011100 Set Charge Voltage Limit to 4192mV (010111xx) [010111xx 4208v default]
+	0x0A: 0111xxxx Set Boost Mode Voltage Regulation to 4.998 (0111xxxx) [default]
+		  xxxxx110 Set Boost Mode Current Limit to 2.15A xxxxx110 [xxxxx011 1.4A default]
+*/
+
 /* Register 00h ***********************************************************************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0
  0	 0	 0	 0	 1	 0	 0	 0
@@ -482,13 +502,12 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_BOOST_LIM_MASK   0x07
 #define BQ2589X_BOOST_LIM_SHIFT  0
 #define BQ2589X_BOOST_LIM_500MA  0x00
-#define BQ2589X_BOOST_LIM_700MA  0x01
-#define BQ2589X_BOOST_LIM_1100MA 0x02
-#define BQ2589X_BOOST_LIM_1300MA 0x03
-#define BQ2589X_BOOST_LIM_1600MA 0x04
-#define BQ2589X_BOOST_LIM_1800MA 0x05
-#define BQ2589X_BOOST_LIM_2100MA 0x06
-#define BQ2589X_BOOST_LIM_2400MA 0x07
+#define BQ2589X_BOOST_LIM_750MA  0x01
+#define BQ2589X_BOOST_LIM_1200MA 0x02
+#define BQ2589X_BOOST_LIM_1400MA 0x03
+#define BQ2589X_BOOST_LIM_1650MA 0x04
+#define BQ2589X_BOOST_LIM_1875MA 0x05
+#define BQ2589X_BOOST_LIM_2150MA 0x06
 
 /* Register 0x0B ********************************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0

@@ -82,17 +82,19 @@ int bq2589x::write_byte(uint8_t reg, uint8_t data)
     _wire->beginTransmission((uint8_t)_i2caddr);
     _wire->write((uint8_t)reg);
     _wire->write((uint8_t)data);
-    // Serial.printf("Write address 0x%02x  , data 0x%02x\r\n", reg, data);
+    //Serial.printf("Write address 0x%02x  , data 0x%02x\r\n", reg, data);
+    Serial.println(reg ,HEX);
+    Serial.println(data, BIN);
     rtn = _wire->endTransmission();
 
     if (rtn == I2C_OK)
     {
-        //  Serial.println("BQ25895 Write OK");
+        Serial.println("BQ25895 Write OK");
         return BQ2589X_OK; //TI lib uses 1 as failed
     }
     else
     {
-        // Serial.println("BQ25895 Write Err");
+        Serial.println("BQ25895 Write Err");
         return BQ2589X_ERR; //TI lib uses 1 as failed
     }
 }
@@ -131,16 +133,14 @@ int bq2589x::enable_otg()
 {
     uint8_t val = BQ2589X_OTG_ENABLE << BQ2589X_OTG_CONFIG_SHIFT;
 
-    return update_bits(BQ2589X_REG_03,
-                       BQ2589X_OTG_CONFIG_MASK, val);
+    return update_bits(BQ2589X_REG_03, BQ2589X_OTG_CONFIG_MASK, val);
 }
 
 int bq2589x::disable_otg()
 {
     uint8_t val = BQ2589X_OTG_DISABLE << BQ2589X_OTG_CONFIG_SHIFT;
 
-    return update_bits(BQ2589X_REG_03,
-                       BQ2589X_OTG_CONFIG_MASK, val);
+    return update_bits(BQ2589X_REG_03, BQ2589X_OTG_CONFIG_MASK, val);
 }
 
 int bq2589x::set_otg_volt(uint16_t volt)
@@ -163,20 +163,20 @@ int bq2589x::set_otg_current(int curr)
 
     if (curr == 500)
         temp = BQ2589X_BOOST_LIM_500MA;
-    else if (curr == 700)
-        temp = BQ2589X_BOOST_LIM_700MA;
-    else if (curr == 1100)
-        temp = BQ2589X_BOOST_LIM_1100MA;
-    else if (curr == 1600)
-        temp = BQ2589X_BOOST_LIM_1600MA;
-    else if (curr == 1800)
-        temp = BQ2589X_BOOST_LIM_1800MA;
-    else if (curr == 2100)
-        temp = BQ2589X_BOOST_LIM_2100MA;
-    else if (curr == 2400)
-        temp = BQ2589X_BOOST_LIM_2400MA;
+    else if (curr == 750)
+        temp = BQ2589X_BOOST_LIM_750MA;
+    else if (curr == 1200)
+        temp = BQ2589X_BOOST_LIM_1200MA;
+    else if (curr == 1400)
+        temp = BQ2589X_BOOST_LIM_1400MA;
+    else if (curr == 1650)
+        temp = BQ2589X_BOOST_LIM_1650MA;
+    else if (curr == 1875)
+        temp = BQ2589X_BOOST_LIM_1875MA;
+    else if (curr == 2150)
+        temp = BQ2589X_BOOST_LIM_2150MA;
     else
-        temp = BQ2589X_BOOST_LIM_1300MA;
+        temp = BQ2589X_BOOST_LIM_1400MA;
 
     return update_bits(BQ2589X_REG_0A, BQ2589X_BOOST_LIM_MASK, temp << BQ2589X_BOOST_LIM_SHIFT);
 }
@@ -184,12 +184,14 @@ int bq2589x::set_otg_current(int curr)
 int bq2589x::enable_charger()
 {
     uint8_t val = BQ2589X_CHG_ENABLE << BQ2589X_CHG_CONFIG_SHIFT;
+
     return update_bits(BQ2589X_REG_03, BQ2589X_CHG_CONFIG_MASK, val);
 }
 
 int bq2589x::disable_charger()
 {
     uint8_t val = BQ2589X_CHG_DISABLE << BQ2589X_CHG_CONFIG_SHIFT;
+
     return update_bits(BQ2589X_REG_03, BQ2589X_CHG_CONFIG_MASK, val);
 }
 
@@ -374,6 +376,45 @@ int bq2589x::get_charging_status()
     }
     val &= BQ2589X_CHRG_STAT_MASK;
     val >>= BQ2589X_CHRG_STAT_SHIFT;
+    return val;
+}
+
+int bq2589x::get_fault_status(byte status)
+{
+    uint8_t val = 0;
+    uint8_t temp1 = 255;
+    uint8_t temp2 = 255;
+    int ret;
+
+    ret = read_byte(&val, BQ2589X_REG_0C);
+    if (ret)
+    {
+        return 0x04; //Error
+    }
+    switch (status) {
+    case 7:
+        temp1 = BQ2589X_FAULT_WDT_MASK;
+        temp2 = BQ2589X_FAULT_WDT_SHIFT;
+        break;
+    case 6:
+        temp1 = BQ2589X_FAULT_BOOST_MASK;
+        temp2 = BQ2589X_FAULT_BOOST_SHIFT;
+        break;
+    case 4:
+        temp1 = BQ2589X_FAULT_CHRG_MASK;
+        temp2 = BQ2589X_FAULT_CHRG_SHIFT;
+        break;
+    case 3:
+        temp1 = BQ2589X_FAULT_BAT_MASK;
+        temp2 = BQ2589X_FAULT_BAT_SHIFT;
+        break;
+    case 0:
+        temp1 = BQ2589X_FAULT_NTC_MASK;
+        temp2 = BQ2589X_FAULT_NTC_SHIFT;
+        break;
+    }
+    val &= temp1;
+    val >>= temp2;
     return val;
 }
 

@@ -4,7 +4,7 @@
 #include <Wire.h>
 #include <Arduino.h>
 
-#include "BQ2589x_reg.h"
+#include "BQ2589x_REG.h"
 
 #define BQ2589x_ADDR (0x6B);
 
@@ -79,6 +79,7 @@ public:
     int set_input_current_limit(int curr);
     int set_vindpm_offset(int offset);
     int get_charging_status();
+    int get_fault_status(byte status);
     void bq2589x_set_otg(int enable);
     int set_watchdog_timer(uint8_t timeout);
     int disable_watchdog_timer();

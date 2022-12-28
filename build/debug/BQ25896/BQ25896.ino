@@ -12,9 +12,6 @@
 // 2 = Number of LEDs
 CRGB leds[2];
 
-// BQ25896 Address
-#define BQ25895 0x6B
-
 // OLED Inputs
 #define SCREEN_ADDRESS 0x3C
 Adafruit_SSD1306 OLED(128, 64, &Wire, -1);
@@ -31,6 +28,10 @@ void setup() {
   Wire.begin();
   Serial.begin(9600);
 
+  // Wait for Serial
+  delay(2000);
+  Serial.println("Setup");
+  
   pinMode(A2, OUTPUT);
   digitalWrite(A2, LOW);
 
@@ -47,9 +48,18 @@ void setup() {
   ENCODER.set_reverse();
 
   CHARGER.begin(&Wire);
-  CHARGER.adc_start(0);
-  CHARGER.set_chargevoltage(4192);
+  Serial.println("Dis WDT");
   CHARGER.disable_watchdog_timer();
+  Serial.println("ADC Start");
+  CHARGER.adc_start(0);
+  Serial.println("CRG V");
+  CHARGER.set_chargevoltage(4192);
+  Serial.println("EN OTG");
+  CHARGER.enable_otg();
+  Serial.println("OTG V");
+  CHARGER.set_otg_volt(4998);
+  Serial.println("OTG I");
+  CHARGER.set_otg_current(2150);
 }
 
 void loop() {
@@ -81,9 +91,6 @@ void loop() {
   if (now - last_change > 5000) {
     last_change = now;
 
-    //reset watch dog
-    CHARGER.reset_watchdog_timer();
-
     OLED.clearDisplay();
     OLED.setTextSize(1);
     OLED.setTextColor(SSD1306_WHITE);
@@ -105,8 +112,8 @@ void loop() {
         break;
     }
     OLED.setCursor(0, 10);
-    OLED.print("TEMP: ");
-    OLED.println(CHARGER.adc_read_temperature());
+    OLED.print("TYPE: ");
+    OLED.println(CHARGER.get_vbus_type());
     OLED.setCursor(0, 20);
     OLED.print("VSYS: ");
     OLED.println(CHARGER.adc_read_sys_volt());
@@ -119,10 +126,25 @@ void loop() {
     OLED.setCursor(0, 50);
     OLED.print("IDPM: ");
     OLED.println(CHARGER.read_idpm_limit());
+
+    //Serial.println(CHARGER.adc_read_charge_current());  // read charge current.
+    OLED.setCursor(70, 20);
+    OLED.print("WDT: ");
+    OLED.println(CHARGER.get_fault_status(7));
+    OLED.setCursor(70, 30);
+    OLED.print("OTG: ");
+    OLED.println(CHARGER.get_fault_status(6));
+    OLED.setCursor(70, 40);
+    OLED.print("CRG: ");
+    OLED.println(CHARGER.get_fault_status(3));
+    Serial.print("WDT Fault:");Serial.println(CHARGER.get_fault_status(7));
+    Serial.print("OTG Fault:");Serial.println(CHARGER.get_fault_status(6));
+    Serial.print("CRG Fault:");Serial.println(CHARGER.get_fault_status(4));
+    Serial.print("BAT Fault:");Serial.println(CHARGER.get_fault_status(3));
+    Serial.print("NTC Fault:");Serial.println(CHARGER.get_fault_status(0));
+
     OLED.display();
     delay(1000);
-
-    Serial.println(CHARGER.adc_read_charge_current());  // read charge current.
   }
 }
 
