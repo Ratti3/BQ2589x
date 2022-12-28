@@ -48,7 +48,6 @@ void setup() {
 
   CHARGER.begin(&Wire);
   CHARGER.adc_start(0);
-  CHARGER.enable_otg();
 }
 
 void loop() {
