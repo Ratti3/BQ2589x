@@ -30,6 +30,14 @@ bq2589x CHARGER;
 unsigned long last_change = 0;
 unsigned long now = 0;
 
+#define THERMISTORPIN      A0
+#define THERMISTORNOMINAL  10000
+#define TEMPERATURENOMINAL 25
+#define NUMSAMPLES         5
+#define BCOEFFICIENT       3425
+#define SERIESRESISTOR     10000
+int samples[NUMSAMPLES];
+
 void setup() {
 
   Wire.begin();
@@ -144,6 +152,9 @@ void loop() {
     OLED.print("IDPM: ");
     OLED.println(CHARGER.read_idpm_limit());
 
+    OLED.setCursor(70, 10);
+    OLED.print("DEG: ");
+    OLED.println(ntcIC());
     //Serial.println(CHARGER.adc_read_charge_current());  // read charge current.
     OLED.setCursor(70, 20);
     OLED.print("WDT: ");
@@ -169,8 +180,7 @@ void timer_service() {
 }
 
 // The event handler for the button.
-void handleEvent(AceButton* /* button */, uint8_t eventType,
-    uint8_t buttonState) {
+void handleEvent(AceButton* /* button */, uint8_t eventType, uint8_t buttonState) {
 
   // Print out a message for all events.
   Serial.print(F("handleEvent(): eventType: "));
@@ -197,4 +207,36 @@ void handleEvent(AceButton* /* button */, uint8_t eventType,
       FastLED.show();
       break;
   }
+}
+
+float ntcIC() {
+  uint8_t i;
+  float average;
+
+  // take N samples in a row, with a slight delay
+  for (i=0; i< NUMSAMPLES; i++) {
+   samples[i] = analogRead(THERMISTORPIN);
+   delay(10);
+  }
+  
+  // average all the samples out
+  average = 0;
+  for (i=0; i< NUMSAMPLES; i++) {
+     average += samples[i];
+  }
+  average /= NUMSAMPLES;
+  
+  // convert the value to resistance
+  average = 1023 / average - 1;
+  average = SERIESRESISTOR / average;
+  
+  float steinhart;
+  steinhart = average / THERMISTORNOMINAL;     // (R/Ro)
+  steinhart = log(steinhart);                  // ln(R/Ro)
+  steinhart /= BCOEFFICIENT;                   // 1/B * ln(R/Ro)
+  steinhart += 1.0 / (TEMPERATURENOMINAL + 273.15); // + (1/To)
+  steinhart = 1.0 / steinhart;                 // Invert
+  steinhart -= 273.15;                         // convert absolute temp to C
+  
+  return steinhart;
 }

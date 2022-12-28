@@ -83,18 +83,18 @@ int bq2589x::write_byte(uint8_t reg, uint8_t data)
     _wire->write((uint8_t)reg);
     _wire->write((uint8_t)data);
     //Serial.printf("Write address 0x%02x  , data 0x%02x\r\n", reg, data);
-    Serial.println(reg ,HEX);
-    Serial.println(data, BIN);
+    //Serial.println(reg ,HEX);
+    //Serial.println(data, BIN);
     rtn = _wire->endTransmission();
 
     if (rtn == I2C_OK)
     {
-        Serial.println("BQ25895 Write OK");
+        //Serial.println("BQ25895 Write OK");
         return BQ2589X_OK; //TI lib uses 1 as failed
     }
     else
     {
-        Serial.println("BQ25895 Write Err");
+        //Serial.println("BQ25895 Write Err");
         return BQ2589X_ERR; //TI lib uses 1 as failed
     }
 }
