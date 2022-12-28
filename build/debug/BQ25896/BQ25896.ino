@@ -3,9 +3,16 @@
 #include <FastLED.h>
 #include <TimerOne.h>
 #include <LowPower.h>
+#include <AceButton.h>
 #include <BasicEncoder.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+
+using namespace ace_button;
+const int ENCODER_SW = A5;
+#define LONGPRESSDURATION 5000
+AceButton button(ENCODER_SW);
+void handleEvent(AceButton*, uint8_t, uint8_t);
 
 // FastLED Inputs
 #define LED_BRIGHTNESS 10
@@ -35,6 +42,14 @@ void setup() {
   pinMode(A2, OUTPUT);
   digitalWrite(A2, LOW);
 
+  pinMode(ENCODER_SW, INPUT);
+  ButtonConfig* buttonConfig = button.getButtonConfig();
+  buttonConfig->setEventHandler(handleEvent);
+  buttonConfig->setFeature(ButtonConfig::kFeatureSuppressAfterClick);
+  buttonConfig->setFeature(ButtonConfig::kFeatureLongPress);
+  buttonConfig->setFeature(ButtonConfig::kFeatureSuppressAfterLongPress);
+  buttonConfig->setLongPressDelay(LONGPRESSDURATION);
+
   FastLED.addLeds<WS2812, 11, RGB>(leds, 2);
   FastLED.setBrightness(LED_BRIGHTNESS);
 
@@ -63,6 +78,8 @@ void setup() {
 }
 
 void loop() {
+
+  button.check();
 
   /*
   // Turn the LED on, then pause
@@ -144,10 +161,40 @@ void loop() {
     Serial.print("NTC Fault:");Serial.println(CHARGER.get_fault_status(0));
 
     OLED.display();
-    delay(1000);
   }
 }
 
 void timer_service() {
   ENCODER.service();
+}
+
+// The event handler for the button.
+void handleEvent(AceButton* /* button */, uint8_t eventType,
+    uint8_t buttonState) {
+
+  // Print out a message for all events.
+  Serial.print(F("handleEvent(): eventType: "));
+  Serial.print(eventType);
+  Serial.print(F("; buttonState: "));
+  Serial.println(buttonState);
+
+  // Control the LED only for the Pressed and Released events.
+  // Notice that if the MCU is rebooted while the button is pressed down, no
+  // event is triggered and the LED remains off.
+  switch (eventType) {
+    case AceButton::kEventPressed:
+      leds[0] = CRGB::Red;
+      FastLED.show();
+      delay(500);
+      leds[0] = CRGB::Black;
+      FastLED.show();      
+      break;
+    case AceButton::kEventReleased:
+      leds[1] = CRGB::Green;
+      FastLED.show();
+      delay(500);
+      leds[1] = CRGB::Black;
+      FastLED.show();
+      break;
+  }
 }
