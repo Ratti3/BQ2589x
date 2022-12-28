@@ -238,8 +238,8 @@ Bit	Field			Type	Reset				Description
 
 #define BQ2589X_IPRECHG_MASK  0xF0 // BIT 4-7 11110000
 #define BQ2589X_IPRECHG_SHIFT 4
-#define BQ2589X_IPRECHG_BASE  64 // 64mA Offset
-#define BQ2589X_IPRECHG_LSB   64 // 64mA
+#define BQ2589X_IPRECHG_BASE  64   // 64mA Offset
+#define BQ2589X_IPRECHG_LSB   64   // 64mA
 
 #define BQ2589X_ITERM_MASK    0x0F // BIT 0-3 00001111
 #define BQ2589X_ITERM_SHIFT   0
@@ -421,28 +421,34 @@ Bit	Field			Type	Reset				Description
 												 1 – Enable
 												 Note: This bit is can only be set when EN_PUMPX bit is set and returns to 0 after current pulse control sequence is completed
 */
-#define BQ2589X_REG_09 0x09
-#define BQ2589X_FORCE_ICO_MASK 0x80
-#define BQ2589X_FORCE_ICO_SHIFT 7
-#define BQ2589X_FORCE_ICO 1
-#define BQ2589X_TMR2X_EN_MASK 0x40
-#define BQ2589X_TMR2X_EN_SHIFT 6
-#define BQ2589X_BATFET_DIS_MASK 0x20
-#define BQ2589X_BATFET_DIS_SHIFT 5
-#define BQ2589X_BATFET_OFF 1
+#define BQ2589X_REG_09              0x09
 
-#define BQ2589X_JEITA_VSET_MASK 0x10
-#define BQ2589X_JEITA_VSET_SHIFT 4
-#define BQ2589X_JEITA_VSET_N150MV 0
-#define BQ2589X_JEITA_VSET_VREG 1
-#define BQ2589X_BATFET_RST_EN_MASK 0x04
+#define BQ2589X_FORCE_ICO_MASK      0x80 // BIT 7   10000000
+#define BQ2589X_FORCE_ICO_SHIFT     7
+#define BQ2589X_FORCE_ICO           1
+
+#define BQ2589X_TMR2X_EN_MASK       0x40 // BIT 6   01000000
+#define BQ2589X_TMR2X_EN_SHIFT      6
+
+#define BQ2589X_BATFET_DIS_MASK     0x20 // BIT 5   00100000
+#define BQ2589X_BATFET_DIS_SHIFT    5
+#define BQ2589X_BATFET_OFF          1
+
+#define BQ2589X_JEITA_VSET_MASK     0x10 // BIT 4   00010000
+#define BQ2589X_JEITA_VSET_SHIFT    4
+#define BQ2589X_JEITA_VSET_N150MV   0
+#define BQ2589X_JEITA_VSET_VREG     1
+
+#define BQ2589X_BATFET_RST_EN_MASK  0x04 // BIT 2   00000100
 #define BQ2589X_BATFET_RST_EN_SHIFT 2
-#define BQ2589X_PUMPX_UP_MASK 0x02
-#define BQ2589X_PUMPX_UP_SHIFT 1
-#define BQ2589X_PUMPX_UP 1
-#define BQ2589X_PUMPX_DOWN_MASK 0x01
-#define BQ2589X_PUMPX_DOWN_SHIFT 0
-#define BQ2589X_PUMPX_DOWN 1
+
+#define BQ2589X_PUMPX_UP_MASK       0x02 // BIT 1   00000010
+#define BQ2589X_PUMPX_UP_SHIFT      1
+#define BQ2589X_PUMPX_UP            1
+
+#define BQ2589X_PUMPX_DOWN_MASK     0x01 // BIT 0   00000001
+#define BQ2589X_PUMPX_DOWN_SHIFT    0
+#define BQ2589X_PUMPX_DOWN          1
 
 /* Register 0x0A **********************************************************************
  7	 6	 5	 4	 3	 2	 1	 0
@@ -466,16 +472,17 @@ Bit	Field			Type	Reset				Description
 												110: 2.15A
 												111: Reserved
 */
-#define BQ2589X_REG_0A 0x0A
-#define BQ2589X_BOOSTV_MASK 0xF0
-#define BQ2589X_BOOSTV_SHIFT 4
-#define BQ2589X_BOOSTV_BASE 4550
-#define BQ2589X_BOOSTV_LSB 64
+#define BQ2589X_REG_0A           0x0A
 
-#define BQ2589X_BOOST_LIM_MASK 0x07
-#define BQ2589X_BOOST_LIM_SHIFT 0
-#define BQ2589X_BOOST_LIM_500MA 0x00
-#define BQ2589X_BOOST_LIM_700MA 0x01
+#define BQ2589X_BOOSTV_MASK      0xF0 // BIT 4-7 11110000
+#define BQ2589X_BOOSTV_SHIFT     4
+#define BQ2589X_BOOSTV_BASE      4550
+#define BQ2589X_BOOSTV_LSB       64
+
+#define BQ2589X_BOOST_LIM_MASK   0x07
+#define BQ2589X_BOOST_LIM_SHIFT  0
+#define BQ2589X_BOOST_LIM_500MA  0x00
+#define BQ2589X_BOOST_LIM_700MA  0x01
 #define BQ2589X_BOOST_LIM_1100MA 0x02
 #define BQ2589X_BOOST_LIM_1300MA 0x03
 #define BQ2589X_BOOST_LIM_1600MA 0x04

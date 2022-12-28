@@ -48,6 +48,8 @@ void setup() {
 
   CHARGER.begin(&Wire);
   CHARGER.adc_start(0);
+  CHARGER.set_chargevoltage(4192);
+  CHARGER.disable_watchdog_timer();
 }
 
 void loop() {
