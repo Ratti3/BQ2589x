@@ -71,6 +71,7 @@ void setup() {
   ENCODER.set_reverse();
 
   CHARGER.begin(&Wire);
+
   Serial.println("Dis WDT");
   CHARGER.disable_watchdog_timer();
   Serial.println("ADC Start");
@@ -83,6 +84,12 @@ void setup() {
   CHARGER.set_otg_volt(4998);
   Serial.println("OTG I");
   CHARGER.set_otg_current(2150);
+
+  // Read all REG values
+  for (byte i = 0; i <=20; i++) {
+    Serial.print(i, HEX); Serial.print(": "); Serial.println(CHARGER.read_reg(i), BIN);
+    delay(10);
+  }
 }
 
 void loop() {

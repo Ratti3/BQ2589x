@@ -746,3 +746,12 @@ int bq2589x::enable_max_charge(bool enable)
 
     return ret;
 }
+
+int bq2589x::read_reg(byte reg)
+{
+    uint8_t val;
+
+    read_byte(&val, reg);
+
+    return val;
+}

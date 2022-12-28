@@ -21,9 +21,10 @@
 		  xxxxx110 Set Boost Mode Current Limit to 2.15A xxxxx110 [xxxxx011 1.4A default]
 */
 
-/* Register 00h ***********************************************************************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 0	 1	 0	 0	 0
+/* Register 00 ************************************************************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 0	 1	 0	 0	 0 : Chip Default
+ 0	 1	 1	 1	 1	 1	 1	 1 : Code Default
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset					Description
@@ -58,9 +59,10 @@ Bit	Field			Type	Reset					Description
 #define BQ2589X_IINLIM_BASE    100  // 100mA
 #define BQ2589X_IINLIM_LSB     50   // 50mA
 
-/* Register 01h ****************************************************************************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 0	 0	 1	 1	 0
+/* Register 01 *****************************************************************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 0	 0	 1	 1	 0 : Chip Default
+ 0	 0	 0	 0	 0	 1	 1	 0 : Code Default
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset				Description
@@ -92,8 +94,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_VINDPMOS_LSB   100  // 100mV
 
 /* Register 0x02 *****************************************************************************************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 1	 0	 0	 0	 1
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 1	 0	 0	 0	 1 : Chip Default
+ 1	 1	 0	 1	 0	 0	 0	 1 : Code Default
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset				Description
@@ -158,8 +161,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_AUTO_DPDM_DISABLE    0
 
 /* Register 0x03 ***********************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 1	 1	 0	 1	 0
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 1	 1	 0	 1	 0 : Chip Default
+ 0	 0	 0	 1	 1	 0	 1	 0 : Code Default
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset				Description
@@ -211,8 +215,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_SYS_MINV_LSB       100  // 0.1V
 
 /* Register 0x04 *********************************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 1	 0	 0	 0	 0	 0
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 1	 0	 0	 0	 0	 0 : Chip Default
+ 0	 0	 1	 0	 0	 0	 0	 0 : Code Default
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset				Description
@@ -240,8 +245,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_ICHG_LSB       64   // 64mA
 
 /* Register 0x05 ***************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 1	 0	 0	 1	 1
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 1	 0	 0	 1	 1 : Chip Default
+ 0	 0	 0	 1	 0	 0	 1	 1 : Code Default
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset				Description
@@ -267,8 +273,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_ITERM_LSB     64   // 64mA
 
 /* Register 0x06 ****************************************************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 1	 0	 1	 1	 1	 1	 0
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 1	 0	 1	 1	 1	 1	 0 : Chip Default
+ 0	 1	 0	 1	 1	 0	 1	 0 : Code Default
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset				Description
@@ -303,8 +310,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_VRECHG_200MV   1    // 200mV
 
 /* Register 0x07 **********************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 1	 0	 0	 1	 1	 1	 0	 1
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 1	 0	 0	 1	 1	 1	 0	 1 : Chip Default
+ 1	 0	 0	 0	 1	 1	 0	 1 : Code Default
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset				Description
@@ -370,8 +378,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_JEITA_ISET_20PCT  1    // 20% Default
 
 /* Register 0x08 ***********************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 0	 0	 0	 1	 1
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 0	 0	 0	 1	 1 : Chip Default
+ 0	 0	 0	 0	 0	 0	 1	 1 : Code Default
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset				Description
@@ -408,8 +417,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_TREG_120C      3    // 120°C (default)
 
 /* Register 0x09 *************************************************************************************************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 1	 0	 0	 0	 1	 0	 0
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 1	 0	 0	 0	 1	 0	 0 : Chip Default
+ 0	 1	 0	 0	 0	 1	 0	 0 : Code Default
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset				Description
@@ -453,12 +463,12 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_BATFET_DIS_MASK     0x20 // BIT 5   00100000
 #define BQ2589X_BATFET_DIS_SHIFT    5
 #define BQ2589X_BATFET_OFF          1
-/*
+
 #define BQ2589X_JEITA_VSET_MASK     0x10 // BIT 4   00010000
 #define BQ2589X_JEITA_VSET_SHIFT    4
 #define BQ2589X_JEITA_VSET_N150MV   0
 #define BQ2589X_JEITA_VSET_VREG     1
-*/
+
 #define BQ2589X_BATFET_RST_EN_MASK  0x04 // BIT 2   00000100
 #define BQ2589X_BATFET_RST_EN_SHIFT 2
 
@@ -471,8 +481,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_PUMPX_DOWN          1
 
 /* Register 0x0A **********************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 1	 1	 1	 0	 0	 1	 1
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 1	 1	 1	 0	 0	 1	 1 : Chip Default
+ 0	 1	 1	 1	 0	 1	 1	 0 : Code Default
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset				Description
@@ -496,22 +507,23 @@ Bit	Field			Type	Reset				Description
 
 #define BQ2589X_BOOSTV_MASK      0xF0 // BIT 4-7 11110000
 #define BQ2589X_BOOSTV_SHIFT     4
-#define BQ2589X_BOOSTV_BASE      4550
-#define BQ2589X_BOOSTV_LSB       64
+#define BQ2589X_BOOSTV_BASE      4550 // 4550mV Offset
+#define BQ2589X_BOOSTV_LSB       64   // 64mV
 
-#define BQ2589X_BOOST_LIM_MASK   0x07
+#define BQ2589X_BOOST_LIM_MASK   0x07 // BIT 0-2 00000111
 #define BQ2589X_BOOST_LIM_SHIFT  0
-#define BQ2589X_BOOST_LIM_500MA  0x00
-#define BQ2589X_BOOST_LIM_750MA  0x01
-#define BQ2589X_BOOST_LIM_1200MA 0x02
-#define BQ2589X_BOOST_LIM_1400MA 0x03
-#define BQ2589X_BOOST_LIM_1650MA 0x04
-#define BQ2589X_BOOST_LIM_1875MA 0x05
-#define BQ2589X_BOOST_LIM_2150MA 0x06
+#define BQ2589X_BOOST_LIM_500MA  0x00 // 0.5A
+#define BQ2589X_BOOST_LIM_750MA  0x01 // 0.75A
+#define BQ2589X_BOOST_LIM_1200MA 0x02 // 1.2A
+#define BQ2589X_BOOST_LIM_1400MA 0x03 // 1.4A (default)
+#define BQ2589X_BOOST_LIM_1650MA 0x04 // 1.65A
+#define BQ2589X_BOOST_LIM_1875MA 0x05 // 1.87A
+#define BQ2589X_BOOST_LIM_2150MA 0x06 // 2.15A
 
 /* Register 0x0B ********************************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- x	 x	 x	 x	 x	 x	 x	 x
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ x	 x	 x	 x	 x	 x	 x	 x : Chip Default
+ 0	 1	 0	 1	 1	 1	 1	 0 : Code Default
  R	 R	 R	 R	 R	 R	 R	 R
 
 Bit	Field			Type	Reset				Description
@@ -534,22 +546,23 @@ Bit	Field			Type	Reset				Description
 												 0 – Not in VSYSMIN regulation (BAT > VSYSMIN)
 												 1 – In VSYSMIN regulation (BAT < VSYSMIN)
 */
-#define BQ2589X_REG_0B 0x0B
-#define BQ2589X_VBUS_STAT_MASK 0xE0
-#define BQ2589X_VBUS_STAT_SHIFT 5
-#define BQ2589X_CHRG_STAT_MASK 0x18
-#define BQ2589X_CHRG_STAT_SHIFT 3
-#define BQ2589X_CHRG_STAT_IDLE 0
-#define BQ2589X_CHRG_STAT_PRECHG 1
+#define BQ2589X_REG_0B            0x0B
+
+#define BQ2589X_VBUS_STAT_MASK    0xE0 // BIT 5-7 11100000
+#define BQ2589X_VBUS_STAT_SHIFT   5
+
+#define BQ2589X_CHRG_STAT_MASK    0x18 // BIT 3-4 00011000
+#define BQ2589X_CHRG_STAT_SHIFT   3
+#define BQ2589X_CHRG_STAT_IDLE    0
+#define BQ2589X_CHRG_STAT_PRECHG  1
 #define BQ2589X_CHRG_STAT_FASTCHG 2
 #define BQ2589X_CHRG_STAT_CHGDONE 3
 
-#define BQ2589X_PG_STAT_MASK 0x04
-#define BQ2589X_PG_STAT_SHIFT 2
-#define BQ2589X_SDP_STAT_MASK 0x02
-#define BQ2589X_SDP_STAT_SHIFT 1
-#define BQ2589X_VSYS_STAT_MASK 0x01
-#define BQ2589X_VSYS_STAT_SHIFT 0
+#define BQ2589X_PG_STAT_MASK      0x04 // BIT 2   00000100
+#define BQ2589X_PG_STAT_SHIFT     2
+
+#define BQ2589X_VSYS_STAT_MASK    0x01 // BIT 0   00000001
+#define BQ2589X_VSYS_STAT_SHIFT   0
 
 /* Register 0x0C ************************************************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0
@@ -583,33 +596,37 @@ Bit	Field			Type	Reset				Description
 												 101 – TS Cold
 												 110 – TS Hot
 */
-#define BQ2589X_REG_0C 0x0c
-#define BQ2589X_FAULT_WDT_MASK 0x80
-#define BQ2589X_FAULT_WDT_SHIFT 7
-#define BQ2589X_FAULT_BOOST_MASK 0x40
-#define BQ2589X_FAULT_BOOST_SHIFT 6
-#define BQ2589X_FAULT_CHRG_MASK 0x30
-#define BQ2589X_FAULT_CHRG_SHIFT 4
-#define BQ2589X_FAULT_CHRG_NORMAL 0
-#define BQ2589X_FAULT_CHRG_INPUT 1
+#define BQ2589X_REG_0C             0x0C
+
+#define BQ2589X_FAULT_WDT_MASK     0x80 // BIT 7   10000000
+#define BQ2589X_FAULT_WDT_SHIFT    7
+
+#define BQ2589X_FAULT_BOOST_MASK   0x40 // BIT 6   01000000
+#define BQ2589X_FAULT_BOOST_SHIFT  6
+
+#define BQ2589X_FAULT_CHRG_MASK    0x30 // BIT 4-5 00110000
+#define BQ2589X_FAULT_CHRG_SHIFT   4
+#define BQ2589X_FAULT_CHRG_NORMAL  0
+#define BQ2589X_FAULT_CHRG_INPUT   1
 #define BQ2589X_FAULT_CHRG_THERMAL 2
-#define BQ2589X_FAULT_CHRG_TIMER 3
+#define BQ2589X_FAULT_CHRG_TIMER   3
 
-#define BQ2589X_FAULT_BAT_MASK 0x08
-#define BQ2589X_FAULT_BAT_SHIFT 3
-#define BQ2589X_FAULT_NTC_MASK 0x07
-#define BQ2589X_FAULT_NTC_SHIFT 0
-#define BQ2589X_FAULT_NTC_TSCOLD 1
-#define BQ2589X_FAULT_NTC_TSHOT 2
+#define BQ2589X_FAULT_BAT_MASK     0x08 // BIT 3   00001000
+#define BQ2589X_FAULT_BAT_SHIFT    3
 
-#define BQ2589X_FAULT_NTC_WARM 2
-#define BQ2589X_FAULT_NTC_COOL 3
-#define BQ2589X_FAULT_NTC_COLD 5
-#define BQ2589X_FAULT_NTC_HOT 6
+#define BQ2589X_FAULT_NTC_MASK     0x07 // BIT 0-2 00000111
+#define BQ2589X_FAULT_NTC_SHIFT    0
+
+#define BQ2589X_FAULT_NTC_NORM     0
+#define BQ2589X_FAULT_NTC_WARM     2
+#define BQ2589X_FAULT_NTC_COOL     3
+#define BQ2589X_FAULT_NTC_COLD     5
+#define BQ2589X_FAULT_NTC_HOT      6
 
 /* Register 0x0D ********************************************************************************************************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 1	 0	 0	 1	 0
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 1	 0	 0	 1	 0 : Chip Default
+
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset				Description
@@ -626,20 +643,22 @@ Bit	Field			Type	Reset				Description
  0	VINDPM[0]		R/W		REG_RST				100mV    Register can be read/write when FORCE_VINDPM = 1
 														 Note: Register is reset to default value when input source is plugged-in
 */
-#define BQ2589X_REG_0D 0x0D
-#define BQ2589X_FORCE_VINDPM_MASK 0x80
-#define BQ2589X_FORCE_VINDPM_SHIFT 7
-#define BQ2589X_FORCE_VINDPM_ENABLE 1
-#define BQ2589X_FORCE_VINDPM_DISABLE 0
-#define BQ2589X_VINDPM_MASK 0x7F
-#define BQ2589X_VINDPM_SHIFT 0
+#define BQ2589X_REG_0D               0x0D
 
-#define BQ2589X_VINDPM_BASE 2600
-#define BQ2589X_VINDPM_LSB 100
+#define BQ2589X_FORCE_VINDPM_MASK    0x80 // BIT 7   10000000
+#define BQ2589X_FORCE_VINDPM_SHIFT   7
+#define BQ2589X_FORCE_VINDPM_ENABLE  1
+#define BQ2589X_FORCE_VINDPM_DISABLE 0
+
+#define BQ2589X_VINDPM_MASK          0x7F // BIT 0-6 01111111
+#define BQ2589X_VINDPM_SHIFT         0
+#define BQ2589X_VINDPM_BASE          2600 // 2600mV Offset
+#define BQ2589X_VINDPM_LSB           100  // 100mV
 
 /* Register 0x0E **********************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 0	 0	 0	 0	 0
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 0	 0	 0	 0	 0 : Chip Default
+ 0	 0	 0	 0	 0	 1	 1	 0 : Code Default
  R	 R	 R	 R	 R	 R	 R	 R
 
 Bit	Field			Type	Reset				Description
@@ -663,8 +682,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_BATV_LSB 20
 
 /* Register 0x0F **********************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 0	 0	 0	 0	 0
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 0	 0	 0	 0	 0 : Chip Default
+
  R	 R	 R	 R	 R	 R	 R	 R
 
 Bit	Field			Type	Reset				Description
