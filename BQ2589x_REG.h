@@ -774,11 +774,12 @@ Bit	Field			Type	Reset				Description
  1	ICHGR[1]		R		N/A					100mA
  0	ICHGR[0]		R		N/A					50mA
 */
-#define BQ2589X_REG_12 0x12
-#define BQ2589X_ICHGR_MASK 0x7F
+#define BQ2589X_REG_12      0x12
+
+#define BQ2589X_ICHGR_MASK  0x7F // BIT 0-6 01111111
 #define BQ2589X_ICHGR_SHIFT 0
-#define BQ2589X_ICHGR_BASE 0
-#define BQ2589X_ICHGR_LSB 50
+#define BQ2589X_ICHGR_BASE  0    // 0mA Offset
+#define BQ2589X_ICHGR_LSB   50   // 50mA
 
 /* Register 0x13 *******************************************************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0 : BIT
@@ -800,15 +801,18 @@ Bit	Field			Type	Reset				Description
  1	IDPM_LIM[1]		R		N/A					100mA
  0	IDPM_LIM[0]		R		N/A					50mA
 */
-#define BQ2589X_REG_13 0x13
-#define BQ2589X_VDPM_STAT_MASK 0x80
+#define BQ2589X_REG_13          0x13
+
+#define BQ2589X_VDPM_STAT_MASK  0x80 // BIT 7   10000000
 #define BQ2589X_VDPM_STAT_SHIFT 7
-#define BQ2589X_IDPM_STAT_MASK 0x40
+
+#define BQ2589X_IDPM_STAT_MASK  0x40 // BIT 6   01000000
 #define BQ2589X_IDPM_STAT_SHIFT 6
-#define BQ2589X_IDPM_LIM_MASK 0x3F
-#define BQ2589X_IDPM_LIM_SHIFT 0
-#define BQ2589X_IDPM_LIM_BASE 100
-#define BQ2589X_IDPM_LIM_LSB 50
+
+#define BQ2589X_IDPM_LIM_MASK   0x3F // BIT 0-5 00111111
+#define BQ2589X_IDPM_LIM_SHIFT  0
+#define BQ2589X_IDPM_LIM_BASE   100  // 100mA Offset
+#define BQ2589X_IDPM_LIM_LSB    50   // 50mA
 
 /* Register 0x14 ******************************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0 : BIT
@@ -832,17 +836,22 @@ Bit	Field			Type	Reset				Description
  1	DEV_REV[1]		R		N/A					Device Revision
  0	DEV_REV[0]		R		N/A					 10
 */
-#define BQ2589X_REG_14 0x14
-#define BQ2589X_RESET_MASK 0x80
-#define BQ2589X_RESET_SHIFT 7
-#define BQ2589X_RESET 1
-#define BQ2589X_ICO_OPTIMIZED_MASK 0x40
+#define BQ2589X_REG_14              0x14
+
+#define BQ2589X_RESET_MASK          0x80 // BIT 7   10000000
+#define BQ2589X_RESET_SHIFT         7
+#define BQ2589X_RESET               1
+
+#define BQ2589X_ICO_OPTIMIZED_MASK  0x40 // BIT 6   01000000
 #define BQ2589X_ICO_OPTIMIZED_SHIFT 6
-#define BQ2589X_PN_MASK 0x38
-#define BQ2589X_PN_SHIFT 3
-#define BQ2589X_TS_PROFILE_MASK 0x04
-#define BQ2589X_TS_PROFILE_SHIFT 2
-#define BQ2589X_DEV_REV_MASK 0x03
-#define BQ2589X_DEV_REV_SHIFT 0
+
+#define BQ2589X_PN_MASK             0x38 // BIT 3-5 00111000
+#define BQ2589X_PN_SHIFT            3
+
+#define BQ2589X_TS_PROFILE_MASK     0x04 // BIT 2   00000100
+#define BQ2589X_TS_PROFILE_SHIFT    2
+
+#define BQ2589X_DEV_REV_MASK        0x03 // BIT 0-1 00000011
+#define BQ2589X_DEV_REV_SHIFT       0
 
 #endif
