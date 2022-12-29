@@ -23,6 +23,7 @@ void handleEvent(AceButton*, uint8_t, uint8_t);
 #define LED_BRIGHTNESS 10
 // 2 = Number of LEDs
 CRGB leds[2];
+bool stateLED0 = 0;
 
 // OLED
 #define SCREEN_ADDRESS 0x3C
@@ -62,7 +63,7 @@ void setup() {
   buttonConfig->setFeature(ButtonConfig::kFeatureSuppressAfterLongPress);
   buttonConfig->setLongPressDelay(LONGPRESSDURATION);
 
-  FastLED.addLeds<WS2812, 11, RGB>(leds, 2);
+  FastLED.addLeds<WS2812, 11, GRB>(leds, 2);
   FastLED.setBrightness(LED_BRIGHTNESS);
 
   delay(250);
@@ -125,8 +126,10 @@ void loop() {
 
   now = millis();
 
-  if (now - last_change > 5000) {
+  if (now - last_change > 1000) {
     last_change = now;
+
+    chargeLED();
 
     OLED.clearDisplay();
     OLED.setTextSize(1);
@@ -157,37 +160,18 @@ void loop() {
     OLED.setCursor(68, 31);
     OLED.print("ICHG:");
     OLED.println(float(CHARGER.adc_read_charge_current() * 0.001), 3);
-    // Bat Temp
+    // IC Temp
     OLED.setCursor(0, 41);
-    OLED.print("BT");
+    OLED.print("IC");
     OLED.print(char(247));
     OLED.print("C:");
-    OLED.println(CHARGER.adc_read_temperature(), 1);
-
+    OLED.println(ntcIC(), 1);
     // IDPM
-    OLED.setCursor(0, 51);
+    OLED.setCursor(68, 41);
     OLED.print("IDPM:");
     OLED.println(float(CHARGER.read_idpm_limit() * 0.001), 2);
 
     OLED.display();
-/*
-    OLED.setCursor(70, 20);
-    OLED.print("WDT: ");
-    OLED.println(CHARGER.get_fault_status(7));
-    OLED.setCursor(70, 30);
-    OLED.print("OTG: ");
-    OLED.println(CHARGER.get_fault_status(6));
-    OLED.setCursor(70, 40);
-    OLED.print("CRG: ");
-    OLED.println(CHARGER.get_fault_status(3));
-    Serial.print("WDT Fault:");Serial.println(CHARGER.get_fault_status(7));
-    Serial.print("OTG Fault:");Serial.println(CHARGER.get_fault_status(6));
-    Serial.print("CRG Fault:");Serial.println(CHARGER.get_fault_status(4));
-    Serial.print("BAT Fault:");Serial.println(CHARGER.get_fault_status(3));
-    Serial.print("NTC Fault:");Serial.println(CHARGER.get_fault_status(0));
-
-    OLED.display();
-*/
   }
 }
 
@@ -213,7 +197,7 @@ void handleEvent(AceButton* /* button */, uint8_t eventType, uint8_t buttonState
       FastLED.show();
       delay(500);
       leds[0] = CRGB::Black;
-      FastLED.show();      
+      FastLED.show();
       break;
     case AceButton::kEventReleased:
       leds[1] = CRGB::Green;
@@ -247,12 +231,49 @@ float ntcIC() {
   average = SERIESRESISTOR / average;
   
   float steinhart;
-  steinhart = average / THERMISTORNOMINAL;     // (R/Ro)
-  steinhart = log(steinhart);                  // ln(R/Ro)
-  steinhart /= BCOEFFICIENT;                   // 1/B * ln(R/Ro)
+  steinhart = average / THERMISTORNOMINAL;          // (R/Ro)
+  steinhart = log(steinhart);                       // ln(R/Ro)
+  steinhart /= BCOEFFICIENT;                        // 1/B * ln(R/Ro)
   steinhart += 1.0 / (TEMPERATURENOMINAL + 273.15); // + (1/To)
-  steinhart = 1.0 / steinhart;                 // Invert
-  steinhart -= 273.15;                         // convert absolute temp to C
+  steinhart = 1.0 / steinhart;                      // Invert
+  steinhart -= 273.15;                              // convert absolute temp to C
   
   return steinhart;
+}
+
+void chargeLED() {
+  switch (CHARGER.get_charging_status())
+  {
+    case 0:
+      leds[0] = CRGB::Black;
+      FastLED.show();
+      break;
+    case 1:
+      if (stateLED0) {
+        leds[0] = CRGB::Black;
+      } else {
+        leds[0] = CRGB::DarkOrange;
+      }
+      stateLED0 = !stateLED0;
+      FastLED.show();
+      break;
+    case 2:
+      if (stateLED0) {
+        leds[0] = CRGB::Black;
+      } else {
+        leds[0] = CRGB::DarkRed;
+      }
+      stateLED0 = !stateLED0;
+      FastLED.show();
+      break;
+    case 3:
+      if (stateLED0) {
+        leds[0] = CRGB::Black;
+      } else {
+        leds[0] = CRGB::LimeGreen;
+      }
+      stateLED0 = !stateLED0;
+      FastLED.show();
+      break;
+  }
 }

@@ -564,9 +564,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_CHRG_STAT_MASK    0x18            // BIT 3-4 00011000
 #define BQ2589X_CHRG_STAT_SHIFT   3
 #define BQ2589X_CHRG_STAT_00      "Idle"
-#define BQ2589X_CHRG_STAT_01      "Pre"
-#define BQ2589X_CHRG_STAT_02      "Fast"
-#define BQ2589X_CHRG_STAT_03      "Done"
+#define BQ2589X_CHRG_STAT_01      "Pre-charge"
+#define BQ2589X_CHRG_STAT_02      "Fast Charge"
+#define BQ2589X_CHRG_STAT_03      "Complete"
 #define BQ2589X_CHRG_STAT_XX      "0Be2"          // Error
 #define BQ2589X_CHRG_STAT_CHGDONE 3
 
