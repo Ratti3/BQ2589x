@@ -535,7 +535,7 @@ Bit	Field			Type	Reset				Description
 												 Note: Software current limit is reported in IINLIM register
  4	CHRG_STAT[1]	R		N/A					Charging Status
  3	CHRG_STAT[0]	R		N/A					 00 – Not Charging
-												 01 – Pre-charge ( < VBATLOWV)
+												 01 – Pre-charge (< VBATLOWV)
 												 10 – Fast Charging
 												 11 – Charge Termination Done
  2	PG_STAT			R		N/A					Power Good Status
@@ -550,6 +550,15 @@ Bit	Field			Type	Reset				Description
 
 #define BQ2589X_VBUS_STAT_MASK    0xE0 // BIT 5-7 11100000
 #define BQ2589X_VBUS_STAT_SHIFT   5
+#define BQ2589X_VBUS_STAT_00 "No USB Input"
+#define BQ2589X_VBUS_STAT_01 "USB Host SDP"
+#define BQ2589X_VBUS_STAT_02 "Adapter 3.25A"
+#define BQ2589X_VBUS_STAT_03 "USB CDP 3.25A"
+#define BQ2589X_VBUS_STAT_04 "USB DCP 3.25A"
+#define BQ2589X_VBUS_STAT_05 "Unknown 500mA"
+#define BQ2589X_VBUS_STAT_06 "Non Standard"
+#define BQ2589X_VBUS_STAT_07 "USB OTG"
+#define BQ2589X_VBUS_STAT_XX "Oooops!"
 
 #define BQ2589X_CHRG_STAT_MASK    0x18 // BIT 3-4 00011000
 #define BQ2589X_CHRG_STAT_SHIFT   3

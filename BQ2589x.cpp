@@ -1,24 +1,11 @@
 #include "BQ2589x.h"
 
-bq2589x::bq2589x(/* args */)
-{
-}
-
-bq2589x::~bq2589x()
-{
-}
-
 /*!
  *   @brief  Initialise sensor with given parameters / settings
  *   @param addr the I2C address the device can be found on
  *   @returns true on success, false otherwise
  */
-int bq2589x::begin(uint8_t addr)
-{
-    _i2caddr = addr;
-    _wire = &Wire;
-    return reset_chip();
-}
+
 
 /*!
  *   @brief  Initialise sensor with given parameters / settings
@@ -115,18 +102,46 @@ int bq2589x::update_bits(uint8_t reg, uint8_t mask, uint8_t data)
     return write_byte(reg, tmp);
 }
 
-bq2589x_vbus_type bq2589x::get_vbus_type()
+String bq2589x::get_vbus_type()
 {
     uint8_t val = 0;
     int ret;
 
     ret = read_byte(&val, BQ2589X_REG_0B);
     if (ret)
-        return (BQ2589X_VBUS_UNKNOWN);
+        return BQ2589X_VBUS_STAT_XX;
     val &= BQ2589X_VBUS_STAT_MASK;
     val >>= BQ2589X_VBUS_STAT_SHIFT;
 
-    return (bq2589x_vbus_type)val;
+    switch (val) {
+    case 0:
+        return BQ2589X_VBUS_STAT_00;
+        break;
+    case 1:
+        return BQ2589X_VBUS_STAT_01;
+        break;
+    case 2:
+        return BQ2589X_VBUS_STAT_02;
+        break;
+    case 3:
+        return BQ2589X_VBUS_STAT_03;
+        break;
+    case 4:
+        return BQ2589X_VBUS_STAT_04;
+        break;
+    case 5:
+        return BQ2589X_VBUS_STAT_05;
+        break;
+    case 6:
+        return BQ2589X_VBUS_STAT_06;
+        break;
+    case 7:
+        return BQ2589X_VBUS_STAT_07;
+        break;
+    default:
+        return BQ2589X_VBUS_STAT_XX;
+        break;
+    }
 }
 
 int bq2589x::enable_otg()

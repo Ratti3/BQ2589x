@@ -11,24 +11,8 @@
 #define I2C_OK 0 //0:success
 #define I2C_ERR 1
 
-#define SDA_PIN 2
-#define SCL_PIN 3
-
 #define BQ2589X_OK 0
 #define BQ2589X_ERR 1 //  ERR>0
-
-typedef enum bq2589x_vbus_type
-{
-    BQ2589X_VBUS_NONE,
-    BQ2589X_VBUS_USB_SDP,
-    BQ2589X_VBUS_USB_CDP, /*CDP for bq25890, Adapter for bq25892*/
-    BQ2589X_VBUS_USB_DCP,
-    BQ2589X_VBUS_MAXC,
-    BQ2589X_VBUS_UNKNOWN,
-    BQ2589X_VBUS_NONSTAND,
-    BQ2589X_VBUS_OTG,
-    BQ2589X_VBUS_TYPE_NUM,
-} bq2589x_vbus_type;
 
 typedef enum bq2589x_part_no
 {
@@ -48,16 +32,14 @@ private:
 
     /* data */
 public:
-    bq2589x(/* args */);
-    ~bq2589x();
     int begin();
     int begin(TwoWire *theWire);
-    int begin(uint8_t addr);
+ //   int begin(uint8_t addr);
     int begin(uint8_t addr, TwoWire *theWire);
     int read_byte(uint8_t *data, uint8_t reg);
     int write_byte(uint8_t reg, uint8_t data);
     int update_bits(uint8_t reg, uint8_t mask, uint8_t data);
-    bq2589x_vbus_type get_vbus_type();
+    String get_vbus_type();
     int enable_otg();
     int disable_otg();
     int set_otg_volt(uint16_t volt);
