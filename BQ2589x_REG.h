@@ -565,8 +565,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_VSYS_STAT_SHIFT   0
 
 /* Register 0x0C ************************************************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- x	 x	 x	 x	 x	 x	 x	 x
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ x	 x	 x	 x	 x	 x	 x	 x : Chip Default
+ 0	 0	 0	 0	 0	 0	 0	 0 : Code Default
  R	 R	 R	 R	 R	 R	 R	 R
 
 Bit	Field			Type	Reset				Description
@@ -626,7 +627,7 @@ Bit	Field			Type	Reset				Description
 /* Register 0x0D ********************************************************************************************************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0 : BIT
  0	 0	 0	 1	 0	 0	 1	 0 : Chip Default
-
+ 0	 0	 0	 1	 0	 0	 1	 1 : Code Default
 R/W	R/W	R/W	R/W	R/W	R/W	R/W	R/W
 
 Bit	Field			Type	Reset				Description
@@ -658,7 +659,7 @@ Bit	Field			Type	Reset				Description
 /* Register 0x0E **********************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0 : BIT
  0	 0	 0	 0	 0	 0	 0	 0 : Chip Default
- 0	 0	 0	 0	 0	 1	 1	 0 : Code Default
+ 0	 0	 0	 0	 0	 0	 0	 0 : Code Default
  R	 R	 R	 R	 R	 R	 R	 R
 
 Bit	Field			Type	Reset				Description
@@ -673,18 +674,20 @@ Bit	Field			Type	Reset				Description
  1	BATV[1]			R		N/A					40mV
  0	BATV[0]			R		N/A					20mV
 */
-#define BQ2589X_REG_0E 0x0E
-#define BQ2589X_THERM_STAT_MASK 0x80
+#define BQ2589X_REG_0E           0x0E
+
+#define BQ2589X_THERM_STAT_MASK  0x80 // BIT 7   10000000
 #define BQ2589X_THERM_STAT_SHIFT 7
-#define BQ2589X_BATV_MASK 0x7F
-#define BQ2589X_BATV_SHIFT 0
-#define BQ2589X_BATV_BASE 2304
-#define BQ2589X_BATV_LSB 20
+
+#define BQ2589X_BATV_MASK        0x7F // BIT 0-6 01111111
+#define BQ2589X_BATV_SHIFT       0
+#define BQ2589X_BATV_BASE        2304
+#define BQ2589X_BATV_LSB         20
 
 /* Register 0x0F **********************************************************************************
  7	 6	 5	 4	 3	 2	 1	 0 : BIT
  0	 0	 0	 0	 0	 0	 0	 0 : Chip Default
-
+ 0	 1	 0	 0	 0	 1	 0	 0 : Code Default
  R	 R	 R	 R	 R	 R	 R	 R
 
 Bit	Field			Type	Reset				Description
@@ -697,15 +700,17 @@ Bit	Field			Type	Reset				Description
  1	SYSV[1]			R		N/A					40mV
  0	SYSV[0]			R		N/A					20mV
 */
-#define BQ2589X_REG_0F 0x0F
-#define BQ2589X_SYSV_MASK 0x7F
+#define BQ2589X_REG_0F     0x0F
+
+#define BQ2589X_SYSV_MASK  0x7F // BIT 0-6 01111111
 #define BQ2589X_SYSV_SHIFT 0
-#define BQ2589X_SYSV_BASE 2304
-#define BQ2589X_SYSV_LSB 20
+#define BQ2589X_SYSV_BASE  2304
+#define BQ2589X_SYSV_LSB   20
 
 /* Register 0x10 **********************************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 0	 0	 0	 0	 0
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 0	 0	 0	 0	 0 : Chip Default
+ 0	 1	 0	 1	 0	 1	 1	 0 : Code Default
  R	 R	 R	 R	 R	 R	 R	 R
 
 Bit	Field			Type	Reset				Description
@@ -718,15 +723,17 @@ Bit	Field			Type	Reset				Description
  1	TSPCT[1]		R		N/A					0.93%
  0	TSPCT[0]		R		N/A					0.465%
 */
-#define BQ2589X_REG_10 0x10
-#define BQ2589X_TSPCT_MASK 0x7F
+#define BQ2589X_REG_10      0x10
+
+#define BQ2589X_TSPCT_MASK  0x7F // BIT 0-6 01111111
 #define BQ2589X_TSPCT_SHIFT 0
-#define BQ2589X_TSPCT_BASE 21
-#define BQ2589X_TSPCT_LSB 0.465 //should be 0.465,kernel does not support float
+#define BQ2589X_TSPCT_BASE  21
+#define BQ2589X_TSPCT_LSB   0.465 //should be 0.465,kernel does not support float
 
 /* Register 0x11 ******************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 0	 0	 0	 0	 0
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 0	 0	 0	 0	 0 : Chip Default
+ 1	 0	 0	 1	 1	 0	 0	 1 : Code Default
  R	 R	 R	 R	 R	 R	 R	 R
 
 Bit	Field			Type	Reset				Description
@@ -741,17 +748,20 @@ Bit	Field			Type	Reset				Description
  1	VBUSV[1]		R		N/A					200mV
  0	VBUSV[0]		R		N/A					100mV
 */
-#define BQ2589X_REG_11 0x11
-#define BQ2589X_VBUS_GD_MASK 0x80
+#define BQ2589X_REG_11        0x11
+
+#define BQ2589X_VBUS_GD_MASK  0x80 // BIT 7   10000000
 #define BQ2589X_VBUS_GD_SHIFT 7
-#define BQ2589X_VBUSV_MASK 0x7F
-#define BQ2589X_VBUSV_SHIFT 0
-#define BQ2589X_VBUSV_BASE 2600
-#define BQ2589X_VBUSV_LSB 100
+
+#define BQ2589X_VBUSV_MASK    0x7F // BIT 0-6 01111111
+#define BQ2589X_VBUSV_SHIFT   0
+#define BQ2589X_VBUSV_BASE    2600
+#define BQ2589X_VBUSV_LSB     100
 
 /* Register 0x12 ****************************************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 0	 0	 0	 0	 0
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 0	 0	 0	 0	 0 : Chip Default
+ 0	 0	 0	 0	 0	 0	 0	 0 : Code Default
  R	 R	 R	 R	 R	 R	 R	 R
 
 Bit	Field			Type	Reset				Description
@@ -770,9 +780,10 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_ICHGR_BASE 0
 #define BQ2589X_ICHGR_LSB 50
 
-/* Register 0x13
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 0	 0	 0	 0	 0
+/* Register 0x13 *******************************************************************************************************************
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 0	 0	 0	 0	 0 : Chip Default
+ 0	 0	 1	 1	 1	 1	 1	 1 : Code Default
  R	 R	 R	 R	 R	 R	 R	 R
 
 Bit	Field			Type	Reset				Description
@@ -800,8 +811,9 @@ Bit	Field			Type	Reset				Description
 #define BQ2589X_IDPM_LIM_LSB 50
 
 /* Register 0x14 ******************************************************************************************
- 7	 6	 5	 4	 3	 2	 1	 0
- 0	 0	 0	 0	 0	 0	 1	 0
+ 7	 6	 5	 4	 3	 2	 1	 0 : BIT
+ 0	 0	 0	 0	 0	 0	 1	 0 : Chip Default
+ 0	 0	 0	 0	 0	 1	 1	 0 : Code Default
 R/W	 R	 R	 R	 R	 R	 R	 R
 
 Bit	Field			Type	Reset				Description
