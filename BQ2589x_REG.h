@@ -548,29 +548,32 @@ Bit	Field			Type	Reset				Description
 */
 #define BQ2589X_REG_0B            0x0B
 
-#define BQ2589X_VBUS_STAT_MASK    0xE0 // BIT 5-7 11100000
+#define BQ2589X_VBUS_STAT_MASK    0xE0            // BIT 5-7 11100000
 #define BQ2589X_VBUS_STAT_SHIFT   5
-#define BQ2589X_VBUS_STAT_00 "No USB Input"
-#define BQ2589X_VBUS_STAT_01 "USB Host SDP"
-#define BQ2589X_VBUS_STAT_02 "Adapter 3.25A"
-#define BQ2589X_VBUS_STAT_03 "USB CDP 3.25A"
-#define BQ2589X_VBUS_STAT_04 "USB DCP 3.25A"
-#define BQ2589X_VBUS_STAT_05 "Unknown 500mA"
-#define BQ2589X_VBUS_STAT_06 "Non Standard"
-#define BQ2589X_VBUS_STAT_07 "USB OTG"
-#define BQ2589X_VBUS_STAT_XX "Oooops!"
+#define BQ2589X_VBUS_STAT_00      "No USB Input"
+#define BQ2589X_VBUS_STAT_01      "USB Host SDP"
+#define BQ2589X_VBUS_STAT_02      "Adapter 3.25A"
+#define BQ2589X_VBUS_STAT_03      "USB CDP 3.25A"
+#define BQ2589X_VBUS_STAT_04      "USB DCP 3.25A"
+#define BQ2589X_VBUS_STAT_05      "Unknown 500mA"
+#define BQ2589X_VBUS_STAT_06      "Non Standard"
+#define BQ2589X_VBUS_STAT_07      "USB OTG"
+#define BQ2589X_VBUS_STAT_XX      "0Be1"          // Error
+#define BQ2589X_VBUS_UNKNOWN      8
 
-#define BQ2589X_CHRG_STAT_MASK    0x18 // BIT 3-4 00011000
+#define BQ2589X_CHRG_STAT_MASK    0x18            // BIT 3-4 00011000
 #define BQ2589X_CHRG_STAT_SHIFT   3
-#define BQ2589X_CHRG_STAT_IDLE    0
-#define BQ2589X_CHRG_STAT_PRECHG  1
-#define BQ2589X_CHRG_STAT_FASTCHG 2
+#define BQ2589X_CHRG_STAT_00      "Idle"
+#define BQ2589X_CHRG_STAT_01      "Pre"
+#define BQ2589X_CHRG_STAT_02      "Fast"
+#define BQ2589X_CHRG_STAT_03      "Done"
+#define BQ2589X_CHRG_STAT_XX      "0Be2"          // Error
 #define BQ2589X_CHRG_STAT_CHGDONE 3
 
-#define BQ2589X_PG_STAT_MASK      0x04 // BIT 2   00000100
+#define BQ2589X_PG_STAT_MASK      0x04            // BIT 2   00000100
 #define BQ2589X_PG_STAT_SHIFT     2
 
-#define BQ2589X_VSYS_STAT_MASK    0x01 // BIT 0   00000001
+#define BQ2589X_VSYS_STAT_MASK    0x01            // BIT 0   00000001
 #define BQ2589X_VSYS_STAT_SHIFT   0
 
 /* Register 0x0C ************************************************************************************************************
@@ -701,7 +704,7 @@ Bit	Field			Type	Reset				Description
 
 Bit	Field			Type	Reset				Description
  7	Reserved		R		N/A					Reserved: Always reads 0
- 6	SYSV[6]			R		N/A					1280mV  ADDC conversion of System Voltage (VSYS)
+ 6	SYSV[6]			R		N/A					1280mV  ADC conversion of System Voltage (VSYS)
  5	SYSV[5]			R		N/A					640mV    Offset: 2.304V
  4	SYSV[4]			R		N/A					320mV	 Range: 2.304V (0000000) – 4.848V (1111111)
  3	SYSV[3]			R		N/A					160mV	 Default: 2.304V (0000000)
@@ -805,7 +808,7 @@ Bit	Field			Type	Reset				Description
 												 1 – IINDPM
  5	IDPM_LIM[5]		R		N/A					1600mA  Input Current Limit in effect while Input Current Optimizer (ICO) is enabled
  4	IDPM_LIM[4]		R		N/A					800mA    Offset: 100mA (default)
- 3	IDPM_LIM[3]		R		N/A					400mA    Range 100mA (0000000) – 3.25mA (1111111)
+ 3	IDPM_LIM[3]		R		N/A					400mA    Range 100mA (0000000) – 3.25A (111111)
  2	IDPM_LIM[2]		R		N/A					200mA
  1	IDPM_LIM[1]		R		N/A					100mA
  0	IDPM_LIM[0]		R		N/A					50mA

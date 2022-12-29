@@ -8,28 +8,32 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
+// BQ25896
+#define BQ2589x_ADDR 0x6B
+bq2589x CHARGER;
+
+//AceButton
 using namespace ace_button;
 const int ENCODER_SW = A5;
 #define LONGPRESSDURATION 5000
 AceButton button(ENCODER_SW);
 void handleEvent(AceButton*, uint8_t, uint8_t);
 
-// FastLED Inputs
+// FastLED
 #define LED_BRIGHTNESS 10
 // 2 = Number of LEDs
 CRGB leds[2];
 
-// OLED Inputs
+// OLED
 #define SCREEN_ADDRESS 0x3C
 Adafruit_SSD1306 OLED(128, 64, &Wire, -1);
 
-// Rotary Encoder Inputs
+// Rotary Encoder & Timer
 BasicEncoder ENCODER(A3, A4);
-
-bq2589x CHARGER;
 unsigned long last_change = 0;
 unsigned long now = 0;
 
+// Thermistor
 #define THERMISTORPIN      A0
 #define THERMISTORNOMINAL  10000
 #define TEMPERATURENOMINAL 25
@@ -70,26 +74,27 @@ void setup() {
   Timer1.attachInterrupt(timer_service);
   ENCODER.set_reverse();
 
-  CHARGER.begin(&Wire);
+  CHARGER.begin(&Wire, BQ2589x_ADDR);
 
-  Serial.println("Dis WDT");
+  //Serial.println("Dis WDT");
   CHARGER.disable_watchdog_timer();
-  Serial.println("ADC Start");
+  //Serial.println("ADC Start");
   CHARGER.adc_start(0);
-  Serial.println("CRG V");
+  //Serial.println("CRG V");
   CHARGER.set_chargevoltage(4192);
-  Serial.println("EN OTG");
+  //Serial.println("EN OTG");
   CHARGER.enable_otg();
-  Serial.println("OTG V");
+  //Serial.println("OTG V");
   CHARGER.set_otg_volt(4998);
-  Serial.println("OTG I");
+  //Serial.println("OTG I");
   CHARGER.set_otg_current(2150);
-
+  /*
   // Read all REG values
   for (byte i = 0; i <=20; i++) {
     Serial.print(i, HEX); Serial.print(": "); Serial.println(CHARGER.read_reg(i), BIN);
     delay(10);
   }
+  */
 }
 
 void loop() {
@@ -126,43 +131,46 @@ void loop() {
     OLED.clearDisplay();
     OLED.setTextSize(1);
     OLED.setTextColor(SSD1306_WHITE);
+    // VBUS input status
     OLED.setCursor(0, 0);
-    OLED.print("CHRG: ");
-    switch (CHARGER.get_charging_status())  // charger status
-    {
-      case 0:
-        OLED.println("Not Charging");
-        break;
-      case 1:
-        OLED.println("Pre-charge");
-        break;
-      case 2:
-        OLED.println("Fast Charging");
-        break;
-      case 3:
-        OLED.println("Charge Done");
-        break;
-    }
+    OLED.print("Input: ");
+    OLED.println(CHARGER.get_vbus_type_text());
+    // Charge status
     OLED.setCursor(0, 10);
-    OLED.print("TYPE: ");
-    OLED.println(CHARGER.get_vbus_type());
-    OLED.setCursor(0, 20);
-    OLED.print("VSYS: ");
-    OLED.println(CHARGER.adc_read_sys_volt());
-    OLED.setCursor(0, 30);
-    OLED.print("VBAT: ");
-    OLED.println(CHARGER.adc_read_battery_volt());
-    OLED.setCursor(0, 40);
-    OLED.print("VBUS: ");
-    OLED.println(CHARGER.adc_read_vbus_volt());
-    OLED.setCursor(0, 50);
-    OLED.print("IDPM: ");
-    OLED.println(CHARGER.read_idpm_limit());
+    OLED.print("Charge:");
+    OLED.println(CHARGER.get_charging_status_text());
+    // Line
+    OLED.drawLine(1, 19, 126, 19, SSD1306_WHITE);
+    // VBUS Voltage
+    OLED.setCursor(0, 21);
+    OLED.print("VBUS:");
+    OLED.println(float(CHARGER.adc_read_vbus_volt() * 0.001), 3);
+    // VSYS Voltage
+    OLED.setCursor(68, 21);
+    OLED.print("VSYS:");
+    OLED.println(float(CHARGER.adc_read_sys_volt() * 0.001), 3);
+    // VBAT Voltage
+    OLED.setCursor(0, 31);
+    OLED.print("VBAT:");
+    OLED.println(float(CHARGER.adc_read_battery_volt() * 0.001), 3);
+    // Charge Current
+    OLED.setCursor(68, 31);
+    OLED.print("ICHG:");
+    OLED.println(float(CHARGER.adc_read_charge_current() * 0.001), 3);
+    // Bat Temp
+    OLED.setCursor(0, 41);
+    OLED.print("BT");
+    OLED.print(char(247));
+    OLED.print("C:");
+    OLED.println(CHARGER.adc_read_temperature(), 1);
 
-    OLED.setCursor(70, 10);
-    OLED.print("DEG: ");
-    OLED.println(ntcIC());
-    //Serial.println(CHARGER.adc_read_charge_current());  // read charge current.
+    // IDPM
+    OLED.setCursor(0, 51);
+    OLED.print("IDPM:");
+    OLED.println(float(CHARGER.read_idpm_limit() * 0.001), 2);
+
+    OLED.display();
+/*
     OLED.setCursor(70, 20);
     OLED.print("WDT: ");
     OLED.println(CHARGER.get_fault_status(7));
@@ -179,6 +187,7 @@ void loop() {
     Serial.print("NTC Fault:");Serial.println(CHARGER.get_fault_status(0));
 
     OLED.display();
+*/
   }
 }
 

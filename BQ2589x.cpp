@@ -13,29 +13,18 @@
  *   @param theWire the I2C object to use
  *   @returns true on success, false otherwise
  */
-int bq2589x::begin(uint8_t addr, TwoWire *theWire)
-{
-    _i2caddr = addr;
-    _wire = theWire;
-    return reset_chip();
-}
+
 
 /*!
  *   @brief  Initialise sensor with given parameters / settings
  *   @returns true on success, false otherwise
  */
-int bq2589x::begin(void)
-{
 
-    _i2caddr = BQ2589x_ADDR;
-    _wire = &Wire;
-    return reset_chip();
-}
 
-int bq2589x::begin(TwoWire *theWire)
+int bq2589x::begin(TwoWire *theWire, uint8_t addr)
 {
     _wire = theWire;
-    _i2caddr = BQ2589x_ADDR;
+    _i2caddr = addr;//BQ2589x_ADDR;
     return reset_chip();
 }
 
@@ -102,18 +91,23 @@ int bq2589x::update_bits(uint8_t reg, uint8_t mask, uint8_t data)
     return write_byte(reg, tmp);
 }
 
-String bq2589x::get_vbus_type()
+int bq2589x::get_vbus_type()
 {
     uint8_t val = 0;
     int ret;
 
     ret = read_byte(&val, BQ2589X_REG_0B);
     if (ret)
-        return BQ2589X_VBUS_STAT_XX;
+        return (BQ2589X_VBUS_UNKNOWN);
     val &= BQ2589X_VBUS_STAT_MASK;
     val >>= BQ2589X_VBUS_STAT_SHIFT;
 
-    switch (val) {
+    return val;
+}
+
+String bq2589x::get_vbus_type_text()
+{
+    switch (get_vbus_type()) {
     case 0:
         return BQ2589X_VBUS_STAT_00;
         break;
@@ -391,7 +385,30 @@ int bq2589x::get_charging_status()
     }
     val &= BQ2589X_CHRG_STAT_MASK;
     val >>= BQ2589X_CHRG_STAT_SHIFT;
+
     return val;
+}
+
+String bq2589x::get_charging_status_text()
+{
+    switch (get_charging_status())
+    {
+    case 0:
+        return BQ2589X_CHRG_STAT_00;
+        break;
+    case 1:
+        return BQ2589X_CHRG_STAT_01;
+        break;
+    case 2:
+        return BQ2589X_CHRG_STAT_02;
+        break;
+    case 3:
+        return BQ2589X_CHRG_STAT_03;
+        break;
+    default:
+        return BQ2589X_CHRG_STAT_XX;
+        break;
+    }
 }
 
 int bq2589x::get_fault_status(byte status)

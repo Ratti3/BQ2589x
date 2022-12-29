@@ -3,16 +3,13 @@
 
 #include <Wire.h>
 #include <Arduino.h>
-
 #include "BQ2589x_REG.h"
 
-#define BQ2589x_ADDR (0x6B);
+#define I2C_OK      0 // 0:success
+#define I2C_ERR     1
 
-#define I2C_OK 0 //0:success
-#define I2C_ERR 1
-
-#define BQ2589X_OK 0
-#define BQ2589X_ERR 1 //  ERR>0
+#define BQ2589X_OK  0
+#define BQ2589X_ERR 1 // ERR>0
 
 typedef enum bq2589x_part_no
 {
@@ -22,24 +19,19 @@ typedef enum bq2589x_part_no
     BQ25896 = 0x00,
 } bq2589x_part_no;
 
-
-
 class bq2589x
 {
 private:
     TwoWire *_wire;
     uint8_t _i2caddr;
-
-    /* data */
 public:
-    int begin();
-    int begin(TwoWire *theWire);
- //   int begin(uint8_t addr);
-    int begin(uint8_t addr, TwoWire *theWire);
+ //   int begin();
+    int begin(TwoWire *theWire, uint8_t addr);
     int read_byte(uint8_t *data, uint8_t reg);
     int write_byte(uint8_t reg, uint8_t data);
     int update_bits(uint8_t reg, uint8_t mask, uint8_t data);
-    String get_vbus_type();
+    int get_vbus_type();
+    String get_vbus_type_text();
     int enable_otg();
     int disable_otg();
     int set_otg_volt(uint16_t volt);
@@ -61,6 +53,7 @@ public:
     int set_input_current_limit(int curr);
     int set_vindpm_offset(int offset);
     int get_charging_status();
+    String get_charging_status_text();
     int get_fault_status(byte status);
     void bq2589x_set_otg(int enable);
     int set_watchdog_timer(uint8_t timeout);
