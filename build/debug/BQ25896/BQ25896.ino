@@ -33,6 +33,7 @@ Adafruit_SSD1306 OLED(128, 64, &Wire, -1);
 BasicEncoder ENCODER(A3, A4);
 unsigned long last_change = 0;
 unsigned long now = 0;
+unsigned long oled_sleep = 0;
 
 // Thermistor
 #define THERMISTORPIN      A0
@@ -102,22 +103,11 @@ void loop() {
 
   button.check();
 
-  /*
-  // Turn the LED on, then pause
-  leds[0] = CRGB::Red;
-  leds[1] = CRGB::Blue;
-  FastLED.show();
-  delay(50);
-  // Now turn the LED off, then pause
-  leds[0] = CRGB::Green;
-  leds[1] = CRGB::Orange;
-  FastLED.show();
-  delay(50);
-*/
-
   int encoder_change = ENCODER.get_change();
   if (encoder_change) {
     Serial.println(ENCODER.get_count());
+    OLED.ssd1306_command(SSD1306_DISPLAYON);
+    oled_sleep = 0;
   }
 
   //OLED.ssd1306_command(SSD1306_DISPLAYOFF);
@@ -126,8 +116,9 @@ void loop() {
 
   now = millis();
 
-  if (now - last_change > 1000) {
+  if (now - last_change > 1000 && oled_sleep <= 60) {
     last_change = now;
+    oled_sleep++;
 
     chargeLED();
 
@@ -172,6 +163,8 @@ void loop() {
     OLED.println(float(CHARGER.read_idpm_limit() * 0.001), 2);
 
     OLED.display();
+  } else if (oled_sleep > 60) {
+    OLED.ssd1306_command(SSD1306_DISPLAYOFF);
   }
 }
 
@@ -242,11 +235,12 @@ float ntcIC() {
 }
 
 void chargeLED() {
+  stateLED0 = !stateLED0;
+  FastLED.show();
   switch (CHARGER.get_charging_status())
   {
     case 0:
       leds[0] = CRGB::Black;
-      FastLED.show();
       break;
     case 1:
       if (stateLED0) {
@@ -254,8 +248,6 @@ void chargeLED() {
       } else {
         leds[0] = CRGB::DarkOrange;
       }
-      stateLED0 = !stateLED0;
-      FastLED.show();
       break;
     case 2:
       if (stateLED0) {
@@ -263,8 +255,6 @@ void chargeLED() {
       } else {
         leds[0] = CRGB::DarkRed;
       }
-      stateLED0 = !stateLED0;
-      FastLED.show();
       break;
     case 3:
       if (stateLED0) {
@@ -272,8 +262,6 @@ void chargeLED() {
       } else {
         leds[0] = CRGB::LimeGreen;
       }
-      stateLED0 = !stateLED0;
-      FastLED.show();
       break;
   }
 }
