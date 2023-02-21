@@ -14,7 +14,7 @@ bq2589x CHARGER;
 
 //AceButton
 using namespace ace_button;
-const int ENCODER_SW = A5;
+const int ENCODER_SW = 7;
 #define LONGPRESSDURATION 5000
 AceButton button(ENCODER_SW);
 void handleEvent(AceButton*, uint8_t, uint8_t);
@@ -30,18 +30,18 @@ bool stateLED0 = 0;
 Adafruit_SSD1306 OLED(128, 64, &Wire, -1);
 
 // Rotary Encoder & Timer
-BasicEncoder ENCODER(A3, A4);
+BasicEncoder ENCODER(A4, A5);
 unsigned long last_change = 0;
 unsigned long now = 0;
 unsigned long oled_sleep = 0;
 
 // Thermistor
-#define THERMISTORPIN      A0
-#define THERMISTORNOMINAL  10000
+#define THERMISTORPIN A0
+#define THERMISTORNOMINAL 10000
 #define TEMPERATURENOMINAL 25
-#define NUMSAMPLES         5
-#define BCOEFFICIENT       3425
-#define SERIESRESISTOR     10000
+#define NUMSAMPLES 5
+#define BCOEFFICIENT 3425
+#define SERIESRESISTOR 10000
 int samples[NUMSAMPLES];
 
 void setup() {
@@ -52,9 +52,18 @@ void setup() {
   // Wait for Serial
   delay(2000);
   Serial.println("Setup");
-  
+
+  // OTG
   pinMode(A2, OUTPUT);
   digitalWrite(A2, LOW);
+
+  // CE
+  pinMode(A3, OUTPUT);
+  digitalWrite(A3, HIGH);
+
+  // PSEL
+  pinMode(10, OUTPUT);
+  digitalWrite(10, HIGH);
 
   pinMode(ENCODER_SW, INPUT);
   ButtonConfig* buttonConfig = button.getButtonConfig();
@@ -78,6 +87,17 @@ void setup() {
 
   CHARGER.begin(&Wire, BQ2589x_ADDR);
 
+  leds[0] = CRGB::Red;
+  FastLED.show();
+  delay(500);
+  leds[0] = CRGB::Black;
+  FastLED.show();
+  leds[1] = CRGB::Green;
+  FastLED.show();
+  delay(500);
+  leds[1] = CRGB::Black;
+  FastLED.show();
+
   //Serial.println("Dis WDT");
   CHARGER.disable_watchdog_timer();
   //Serial.println("ADC Start");
@@ -89,7 +109,7 @@ void setup() {
   //Serial.println("OTG V");
   CHARGER.set_otg_volt(4998);
   //Serial.println("OTG I");
-  CHARGER.set_otg_current(2150);
+  CHARGER.set_otg_current(1400);
   /*
   // Read all REG values
   for (byte i = 0; i <=20; i++) {
@@ -97,6 +117,9 @@ void setup() {
     delay(10);
   }
   */
+  Serial.print(0x0A, HEX);
+  Serial.print(": ");
+  Serial.println(CHARGER.read_reg(0x0A), BIN);
 }
 
 void loop() {
@@ -207,38 +230,37 @@ float ntcIC() {
   float average;
 
   // take N samples in a row, with a slight delay
-  for (i=0; i< NUMSAMPLES; i++) {
-   samples[i] = analogRead(THERMISTORPIN);
-   delay(10);
+  for (i = 0; i < NUMSAMPLES; i++) {
+    samples[i] = analogRead(THERMISTORPIN);
+    delay(10);
   }
-  
+
   // average all the samples out
   average = 0;
-  for (i=0; i< NUMSAMPLES; i++) {
-     average += samples[i];
+  for (i = 0; i < NUMSAMPLES; i++) {
+    average += samples[i];
   }
   average /= NUMSAMPLES;
-  
+
   // convert the value to resistance
   average = 1023 / average - 1;
   average = SERIESRESISTOR / average;
-  
+
   float steinhart;
-  steinhart = average / THERMISTORNOMINAL;          // (R/Ro)
-  steinhart = log(steinhart);                       // ln(R/Ro)
-  steinhart /= BCOEFFICIENT;                        // 1/B * ln(R/Ro)
-  steinhart += 1.0 / (TEMPERATURENOMINAL + 273.15); // + (1/To)
-  steinhart = 1.0 / steinhart;                      // Invert
-  steinhart -= 273.15;                              // convert absolute temp to C
-  
+  steinhart = average / THERMISTORNOMINAL;           // (R/Ro)
+  steinhart = log(steinhart);                        // ln(R/Ro)
+  steinhart /= BCOEFFICIENT;                         // 1/B * ln(R/Ro)
+  steinhart += 1.0 / (TEMPERATURENOMINAL + 273.15);  // + (1/To)
+  steinhart = 1.0 / steinhart;                       // Invert
+  steinhart -= 273.15;                               // convert absolute temp to C
+
   return steinhart;
 }
 
 void chargeLED() {
   stateLED0 = !stateLED0;
   FastLED.show();
-  switch (CHARGER.get_charging_status())
-  {
+  switch (CHARGER.get_charging_status()) {
     case 0:
       leds[0] = CRGB::Black;
       break;
