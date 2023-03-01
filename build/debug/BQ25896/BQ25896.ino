@@ -23,21 +23,22 @@
 */
 
 // BQ25896
-#define OTG A2
-#define CE A3
-#define INT 9
-#define PSEL 10
+#define PIN_OTG A2
+#define PIN_CE A3
+#define PIN_INT 9
+#define PIN_PSEL 10
 #define BQ2589x_ADDR 0x6B
 bq2589x CHARGER;
 
 // AceButton
 #define LONGPRESSDURATION 5000
 using namespace ace_button;
-const int ENCODER_SW = 7;
-AceButton button(ENCODER_SW);
+#define PIN_ENCODER_SW 7
+AceButton button(PIN_ENCODER_SW);
 void handleEvent(AceButton*, uint8_t, uint8_t);
 
 // FastLED
+#define PIN_WS2812 11
 #define NUM_LEDS 2
 #define LED_BRIGHTNESS 10
 CRGB leds[NUM_LEDS];
@@ -49,14 +50,14 @@ Adafruit_SSD1306 OLED(128, 64, &Wire, -1);
 unsigned long oled_sleep = 0;
 
 // Rotary Encoder & Timer
-#define ENCA A4
-#define ENCB A5
-BasicEncoder ENCODER(ENCA, ENCB);
+#define PIN_ENCA A4
+#define PIN_ENCB A5
+BasicEncoder ENCODER(PIN_ENCA, PIN_ENCB);
 unsigned long last_change = 0;
 unsigned long now = 0;
 
 // IC NTC Thermistor
-#define THERMISTORPIN A0
+#define PIN_THERMISTOR A0
 #define THERMISTORNOMINAL 10000
 #define TEMPERATURENOMINAL 25
 #define NUMSAMPLES 5
@@ -65,7 +66,7 @@ unsigned long now = 0;
 int samples[NUMSAMPLES];
 
 // Buzzer
-#define BUZZER 5
+#define PIN_BUZZER 5
 
 void setup() {
 
@@ -74,24 +75,24 @@ void setup() {
 
   // Wait for Serial
   delay(2000);
-  Serial.println("Setup");
 
   // D13 LED
   pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
 
   // OTG
-  pinMode(A2, OUTPUT);
-  digitalWrite(A2, LOW);
+  pinMode(PIN_OTG, OUTPUT);
+  digitalWrite(PIN_OTG, LOW);
 
   // CE
-  pinMode(A3, OUTPUT);
-  digitalWrite(A3, HIGH);
+  pinMode(PIN_CE, OUTPUT);
+  digitalWrite(PIN_CE, HIGH);
 
   // PSEL
-  pinMode(10, OUTPUT);
-  digitalWrite(10, HIGH);
+  pinMode(PIN_PSEL, OUTPUT);
+  digitalWrite(PIN_PSEL, HIGH);
 
-  pinMode(ENCODER_SW, INPUT);
+  pinMode(PIN_ENCODER_SW, INPUT);
   ButtonConfig* buttonConfig = button.getButtonConfig();
   buttonConfig->setEventHandler(handleEvent);
   buttonConfig->setFeature(ButtonConfig::kFeatureSuppressAfterClick);
@@ -99,12 +100,11 @@ void setup() {
   buttonConfig->setFeature(ButtonConfig::kFeatureSuppressAfterLongPress);
   buttonConfig->setLongPressDelay(LONGPRESSDURATION);
 
-  FastLED.addLeds<WS2812, 11, GRB>(leds, 2);
+  FastLED.addLeds<WS2812, PIN_WS2812>(leds, NUM_LEDS);
   FastLED.setBrightness(LED_BRIGHTNESS);
 
   delay(250);
   OLED.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
-
   OLED.clearDisplay();
 
   Timer1.initialize(1000);
@@ -114,13 +114,13 @@ void setup() {
   CHARGER.begin(&Wire, BQ2589x_ADDR);
 
   leds[0] = CRGB::Red;
-  tone(BUZZER, 2000, 500);
+  tone(PIN_BUZZER, 2000, 500);
   FastLED.show();
   delay(500);
   leds[0] = CRGB::Black;
   FastLED.show();
   leds[1] = CRGB::Green;
-  tone(BUZZER, 4000, 500);
+  tone(PIN_BUZZER, 4000, 500);
   FastLED.show();
   delay(500);
   leds[1] = CRGB::Black;
@@ -215,12 +215,12 @@ void loop() {
     OLED.ssd1306_command(SSD1306_DISPLAYOFF);
 
     // Allow wake up pin to trigger interrupt on low.
-    attachInterrupt(digitalPinToInterrupt(ENCODER_SW), wakeUp, LOW);
+    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW), wakeUp, LOW);
 
     LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
 
     // Disable external pin interrupt on wake up pin.
-    detachInterrupt(digitalPinToInterrupt(ENCODER_SW));
+    detachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW));
 
     OLED.ssd1306_command(SSD1306_DISPLAYON);
     oled_sleep = 0;
@@ -270,7 +270,7 @@ float ntcIC() {
 
   // take N samples in a row, with a slight delay
   for (i = 0; i < NUMSAMPLES; i++) {
-    samples[i] = analogRead(THERMISTORPIN);
+    samples[i] = analogRead(PIN_THERMISTOR);
     delay(10);
   }
 
