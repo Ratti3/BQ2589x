@@ -8,34 +8,54 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
+/*  ____________
+  -|            |-  A0 : TH_IC
+  -|            |-  A2 : OTG
+  -|            |-  A3 : CE
+  -|            |-  A4 : ENCA
+  -|            |-  A5 : ENCB
+  -| ATMEGA32U4 |-  ~5 : BUZ
+  -|            |-   7 : SW1 [INT.6]
+  -|            |-  ~9 : INT [PCINT5]
+  -|            |- ~10 : PSEL
+  -|            |- ~11 : WS2812
+  -|____________|- ~13 : D13_LED
+*/
+
 // BQ25896
+#define OTG A2
+#define CE A3
+#define INT 9
+#define PSEL 10
 #define BQ2589x_ADDR 0x6B
 bq2589x CHARGER;
 
-//AceButton
+// AceButton
+#define LONGPRESSDURATION 5000
 using namespace ace_button;
 const int ENCODER_SW = 7;
-#define LONGPRESSDURATION 5000
 AceButton button(ENCODER_SW);
 void handleEvent(AceButton*, uint8_t, uint8_t);
 
 // FastLED
+#define NUM_LEDS 2
 #define LED_BRIGHTNESS 10
-// 2 = Number of LEDs
-CRGB leds[2];
+CRGB leds[NUM_LEDS];
 bool stateLED0 = 0;
 
 // OLED
 #define SCREEN_ADDRESS 0x3C
 Adafruit_SSD1306 OLED(128, 64, &Wire, -1);
-
-// Rotary Encoder & Timer
-BasicEncoder ENCODER(A4, A5);
-unsigned long last_change = 0;
-unsigned long now = 0;
 unsigned long oled_sleep = 0;
 
-// Thermistor
+// Rotary Encoder & Timer
+#define ENCA A4
+#define ENCB A5
+BasicEncoder ENCODER(ENCA, ENCB);
+unsigned long last_change = 0;
+unsigned long now = 0;
+
+// IC NTC Thermistor
 #define THERMISTORPIN A0
 #define THERMISTORNOMINAL 10000
 #define TEMPERATURENOMINAL 25
@@ -43,6 +63,9 @@ unsigned long oled_sleep = 0;
 #define BCOEFFICIENT 3425
 #define SERIESRESISTOR 10000
 int samples[NUMSAMPLES];
+
+// Buzzer
+#define BUZZER 5
 
 void setup() {
 
@@ -52,6 +75,9 @@ void setup() {
   // Wait for Serial
   delay(2000);
   Serial.println("Setup");
+
+  // D13 LED
+  pinMode(LED_BUILTIN, OUTPUT);
 
   // OTG
   pinMode(A2, OUTPUT);
@@ -88,11 +114,13 @@ void setup() {
   CHARGER.begin(&Wire, BQ2589x_ADDR);
 
   leds[0] = CRGB::Red;
+  tone(BUZZER, 2000, 500);
   FastLED.show();
   delay(500);
   leds[0] = CRGB::Black;
   FastLED.show();
   leds[1] = CRGB::Green;
+  tone(BUZZER, 4000, 500);
   FastLED.show();
   delay(500);
   leds[1] = CRGB::Black;
@@ -116,10 +144,11 @@ void setup() {
     Serial.print(i, HEX); Serial.print(": "); Serial.println(CHARGER.read_reg(i), BIN);
     delay(10);
   }
-  */
+
   Serial.print(0x0A, HEX);
   Serial.print(": ");
   Serial.println(CHARGER.read_reg(0x0A), BIN);
+  */
 }
 
 void loop() {
@@ -132,10 +161,6 @@ void loop() {
     OLED.ssd1306_command(SSD1306_DISPLAYON);
     oled_sleep = 0;
   }
-
-  //OLED.ssd1306_command(SSD1306_DISPLAYOFF);
-  //LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
-  //OLED.ssd1306_command(SSD1306_DISPLAYON);
 
   now = millis();
 
@@ -188,7 +213,21 @@ void loop() {
     OLED.display();
   } else if (oled_sleep > 60) {
     OLED.ssd1306_command(SSD1306_DISPLAYOFF);
+
+    // Allow wake up pin to trigger interrupt on low.
+    attachInterrupt(digitalPinToInterrupt(ENCODER_SW), wakeUp, LOW);
+
+    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+
+    // Disable external pin interrupt on wake up pin.
+    detachInterrupt(digitalPinToInterrupt(ENCODER_SW));
+
+    OLED.ssd1306_command(SSD1306_DISPLAYON);
+    oled_sleep = 0;
   }
+}
+
+void wakeUp() {
 }
 
 void timer_service() {
