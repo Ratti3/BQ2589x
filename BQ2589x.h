@@ -35,7 +35,9 @@ public:
     int enable_otg();
     int disable_otg();
     int set_otg_volt(uint16_t volt);
+    int get_otg_volt();
     int set_otg_current(int curr);
+    int get_otg_current();
     int enable_charger();
     int disable_charger();
     int adc_start(bool oneshot);

@@ -166,6 +166,24 @@ int bq2589x::set_otg_volt(uint16_t volt)
     return update_bits(BQ2589X_REG_0A, BQ2589X_BOOSTV_MASK, val);
 }
 
+int bq2589x::get_otg_volt()
+{
+    uint8_t val;
+    int volt;
+    int ret;
+
+    ret = read_byte(&val, BQ2589X_REG_0A);
+    if (ret)
+    {
+        return ret;
+    }
+    else
+    {
+        volt = (BQ2589X_BOOSTV_BASE + ((val & BQ2589X_BOOSTV_MASK) >> BQ2589X_BOOSTV_SHIFT) * BQ2589X_BOOSTV_LSB);
+        return volt;
+    }
+}
+
 int bq2589x::set_otg_current(int curr)
 {
     uint8_t temp;
@@ -188,6 +206,46 @@ int bq2589x::set_otg_current(int curr)
         temp = BQ2589X_BOOST_LIM_1400MA;
 
     return update_bits(BQ2589X_REG_0A, BQ2589X_BOOST_LIM_MASK, temp << BQ2589X_BOOST_LIM_SHIFT);
+}
+
+int bq2589x::get_otg_current()
+{
+    uint8_t val;
+    int curr;
+    int ret;
+
+    ret = read_byte(&val, BQ2589X_REG_0A);
+    if (ret)
+    {
+        return ret;
+    }
+    else
+    {
+        curr = (val & BQ2589X_BOOST_LIM_MASK) >> BQ2589X_BOOST_LIM_SHIFT;
+        switch (curr) {
+        case 0:
+            return BQ2589X_BOOST_LIM_500MA_VALUE;
+            break;
+        case 1:
+            return BQ2589X_BOOST_LIM_750MA_VALUE;
+            break;
+        case 2:
+            return BQ2589X_BOOST_LIM_1200MA_VALUE;
+            break;
+        case 3:
+            return BQ2589X_BOOST_LIM_1400MA_VALUE;
+            break;
+        case 4:
+            return BQ2589X_BOOST_LIM_1650MA_VALUE;
+            break;
+        case 5:
+            return BQ2589X_BOOST_LIM_1875MA_VALUE;
+            break;
+        case 6:
+            return BQ2589X_BOOST_LIM_2150MA_VALUE;
+            break;
+        }
+    }
 }
 
 int bq2589x::enable_charger()

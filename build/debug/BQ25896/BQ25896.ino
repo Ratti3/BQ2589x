@@ -1,3 +1,20 @@
+/*                                                     https://oshwlab.com/ratti3
+  _|_|_|                _|      _|      _|  _|_|_|     https://youtube.com/@Ratti3
+  _|    _|    _|_|_|  _|_|_|_|_|_|_|_|            _|   https://projecthub.arduino.cc/Ratti3
+  _|_|_|    _|    _|    _|      _|      _|    _|_|     https://ratti3.blogspot.com
+  _|    _|  _|    _|    _|      _|      _|        _|   https://hackaday.io/Ratti3
+  _|    _|    _|_|_|      _|_|    _|_|  _|  _|_|_|     https://www.hackster.io/Ratti3
+.                                                      https://github.com/Ratti3
+
+This file is part of Foobar.
+
+Foobar is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as 
+published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+Foobar is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include <Wire.h>
 #include <BQ2589x.h>
 #include <FastLED.h>
@@ -9,55 +26,59 @@
 #include <Adafruit_SSD1306.h>
 
 /*  ____________
-  -|            |-  A0 : TH_IC
-  -|            |-  A2 : OTG
-  -|            |-  A3 : CE
-  -|            |-  A4 : ENCA
-  -|            |-  A5 : ENCB
-  -| ATMEGA32U4 |-  ~5 : BUZ
-  -|            |-   7 : SW1 [INT.6]
-  -|            |-  ~9 : INT [PCINT5]
-  -|            |- ~10 : PSEL
-  -|            |- ~11 : WS2812
-  -|____________|- ~13 : D13_LED
+  -|            |-  A0 : TH_IC   [AI]         NTC for monitoring temperature close to the IC
+  -|            |-  A2 : OTG     [DI]         Boost mode enable pin. The boost mode is activated when OTG_CONFIG = 1, OTG pin is high, and no input source is detected at VBUS.
+  -|            |-  A3 : CE      [DI]         Active low Charge Enable pin. Battery charging is enabled when CHG_CONFIG = 1 and CE pin = Low. CE pin must be pulled High or Low.
+  -|            |-  A4 : ENCA    [DI]         Rotary Encoder
+  -|            |-  A5 : ENCB    [DI]         Rotary Encoder
+  -| ATMEGA32U4 |-  ~5 : BUZ     [AO][PWM]    Buzzer
+  -|            |-   7 : SW1     [DI][INT.6]  Rotary Encoder Switch, used to wake up from sleep mode.
+  -|            |-  ~9 : INT     [DO][PCINT5] Open-drain Interrupt Output. The INT pin sends active low, 256-μs pulse to host to report charger device status and fault.
+  -|            |- ~10 : PSEL    [DI]         Power source selection input. High indicates a USB host source and Low indicates an adapter source.
+  -|            |- ~11 : WS2812  [DO]         WS2812B LEDs
+  -|____________|- ~13 : D13_LED [DO]         Arduino LED_BUILTIN
+  [DI] = Digital In, [DO] = Digital Out, [AI] = Analog In, [AO] = Analog Out
 */
 
 // BQ25896
-#define PIN_OTG A2
-#define PIN_CE A3
-#define PIN_INT 9
-#define PIN_PSEL 10
-#define BQ2589x_ADDR 0x6B
+#define PIN_OTG A2         // BQ25896 OTG Digital Input
+#define PIN_CE A3          // BQ25896 CE Digital Input
+#define PIN_INT 9          // BQ25896 INT Digital Input
+#define PIN_PSEL 10        // BQ25896 PSEL Digital Input
+#define BQ2589x_ADDR 0x6B  // BQ25896 I2C Address
 bq2589x CHARGER;
 
 // AceButton
-#define LONGPRESSDURATION 5000
+#define PIN_ENCODER_SW 7        // SW1 PIN
+#define LONGPRESSDURATION 5000  // Time in ms for SW1 long press
 using namespace ace_button;
-#define PIN_ENCODER_SW 7
-AceButton button(PIN_ENCODER_SW);
+AceButton SW1(PIN_ENCODER_SW);
 void handleEvent(AceButton*, uint8_t, uint8_t);
 
 // FastLED
-#define PIN_WS2812 11
-#define NUM_LEDS 2
+#define PIN_WS2812 11  // WS2812B Data PIN
+#define NUM_LEDS 2     // Number of WS2812B LEDs
 #define LED_BRIGHTNESS 10
 CRGB leds[NUM_LEDS];
 bool stateLED0 = 0;
 
 // OLED
-#define SCREEN_ADDRESS 0x3C
+#define SCREEN_ADDRESS 0x3C  // OLED Address
 Adafruit_SSD1306 OLED(128, 64, &Wire, -1);
 unsigned long oled_sleep = 0;
 
-// Rotary Encoder & Timer
-#define PIN_ENCA A4
-#define PIN_ENCB A5
-BasicEncoder ENCODER(PIN_ENCA, PIN_ENCB);
+// Rotary Encoder, Timer & Menu
+#define PIN_ENCA A4  // Rotary Encoder PIN A
+#define PIN_ENCB A5  // Rotary Encoder PIN B
+BasicEncoder ENCODER(PIN_ENCA, PIN_ENCB, HIGH, 2);
 unsigned long last_change = 0;
 unsigned long now = 0;
+int encoderPrev = 0;
+bool menuMode = 0;
+int menuPosition = 0;
 
 // IC NTC Thermistor
-#define PIN_THERMISTOR A0
+#define PIN_THERMISTOR A0  // NTC Thermistor PIN
 #define THERMISTORNOMINAL 10000
 #define TEMPERATURENOMINAL 25
 #define NUMSAMPLES 5
@@ -66,7 +87,7 @@ unsigned long now = 0;
 int samples[NUMSAMPLES];
 
 // Buzzer
-#define PIN_BUZZER 5
+#define PIN_BUZZER 5  // Buzzer PIN
 
 void setup() {
 
@@ -80,39 +101,49 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
-  // OTG
+  // INT
+  pinMode(PIN_INT, INPUT);
+
+  // OTG [LOW = Off, HIGH = Boost]
   pinMode(PIN_OTG, OUTPUT);
   digitalWrite(PIN_OTG, LOW);
 
-  // CE
+  // CE [LOW = Charge, HIGH = Idle]
   pinMode(PIN_CE, OUTPUT);
   digitalWrite(PIN_CE, HIGH);
 
-  // PSEL
+  // PSEL [LOW = Adapter, HIGH = USB]
   pinMode(PIN_PSEL, OUTPUT);
-  digitalWrite(PIN_PSEL, HIGH);
+  digitalWrite(PIN_PSEL, LOW);
 
+  // AceButton setup
   pinMode(PIN_ENCODER_SW, INPUT);
-  ButtonConfig* buttonConfig = button.getButtonConfig();
+  ButtonConfig* buttonConfig = SW1.getButtonConfig();
   buttonConfig->setEventHandler(handleEvent);
   buttonConfig->setFeature(ButtonConfig::kFeatureSuppressAfterClick);
   buttonConfig->setFeature(ButtonConfig::kFeatureLongPress);
   buttonConfig->setFeature(ButtonConfig::kFeatureSuppressAfterLongPress);
   buttonConfig->setLongPressDelay(LONGPRESSDURATION);
 
+  // FastLED setup
   FastLED.addLeds<WS2812, PIN_WS2812>(leds, NUM_LEDS);
   FastLED.setBrightness(LED_BRIGHTNESS);
 
   delay(250);
+
+  // OLED setup
   OLED.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
   OLED.clearDisplay();
 
+  // Timer1 setup
   Timer1.initialize(1000);
   Timer1.attachInterrupt(timer_service);
   ENCODER.set_reverse();
 
+  // BQ25896 setup
   CHARGER.begin(&Wire, BQ2589x_ADDR);
 
+  // Boot test LEDs and buzzer
   leds[0] = CRGB::Red;
   tone(PIN_BUZZER, 2000, 500);
   FastLED.show();
@@ -135,9 +166,10 @@ void setup() {
   //Serial.println("EN OTG");
   CHARGER.enable_otg();
   //Serial.println("OTG V");
-  CHARGER.set_otg_volt(4998);
+  CHARGER.set_otg_volt(5062);
   //Serial.println("OTG I");
-  CHARGER.set_otg_current(1400);
+  CHARGER.set_otg_current(2150);
+
   /*
   // Read all REG values
   for (byte i = 0; i <=20; i++) {
@@ -152,14 +184,17 @@ void setup() {
 }
 
 void loop() {
+  // Check for SW1 (Encoder Switch) presses
+  SW1.check();
 
-  button.check();
-
-  int encoder_change = ENCODER.get_change();
-  if (encoder_change) {
-    Serial.println(ENCODER.get_count());
-    OLED.ssd1306_command(SSD1306_DISPLAYON);
-    oled_sleep = 0;
+  // Check for Encoder turns
+  //int encoder_change = ENCODER.get_change();
+  if (ENCODER.get_change()) {
+    //Serial.println(ENCODER.get_count());
+    //OLED.ssd1306_command(SSD1306_DISPLAYON);
+    //oled_sleep = 0;
+    tone(PIN_BUZZER, 6000, 100);
+    menuOption(ENCODER.get_count());
   }
 
   now = millis();
@@ -168,61 +203,22 @@ void loop() {
     last_change = now;
     oled_sleep++;
 
-    chargeLED();
+    if (menuMode == 0) {
+      displayStatus();
+    }
 
-    OLED.clearDisplay();
-    OLED.setTextSize(1);
-    OLED.setTextColor(SSD1306_WHITE);
-    // VBUS input status
-    OLED.setCursor(0, 0);
-    OLED.print("Input: ");
-    OLED.println(CHARGER.get_vbus_type_text());
-    // Charge status
-    OLED.setCursor(0, 10);
-    OLED.print("Charge:");
-    OLED.println(CHARGER.get_charging_status_text());
-    // Line
-    OLED.drawLine(1, 19, 126, 19, SSD1306_WHITE);
-    // VBUS Voltage
-    OLED.setCursor(0, 21);
-    OLED.print("VBUS:");
-    OLED.println(float(CHARGER.adc_read_vbus_volt() * 0.001), 3);
-    // VSYS Voltage
-    OLED.setCursor(68, 21);
-    OLED.print("VSYS:");
-    OLED.println(float(CHARGER.adc_read_sys_volt() * 0.001), 3);
-    // VBAT Voltage
-    OLED.setCursor(0, 31);
-    OLED.print("VBAT:");
-    OLED.println(float(CHARGER.adc_read_battery_volt() * 0.001), 3);
-    // Charge Current
-    OLED.setCursor(68, 31);
-    OLED.print("ICHG:");
-    OLED.println(float(CHARGER.adc_read_charge_current() * 0.001), 3);
-    // IC Temp
-    OLED.setCursor(0, 41);
-    OLED.print("IC");
-    OLED.print(char(247));
-    OLED.print("C:");
-    OLED.println(ntcIC(), 1);
-    // IDPM
-    OLED.setCursor(68, 41);
-    OLED.print("IDPM:");
-    OLED.println(float(CHARGER.read_idpm_limit() * 0.001), 2);
-
-    OLED.display();
   } else if (oled_sleep > 60) {
-    OLED.ssd1306_command(SSD1306_DISPLAYOFF);
+    ////OLED.ssd1306_command(SSD1306_DISPLAYOFF);
 
     // Allow wake up pin to trigger interrupt on low.
-    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW), wakeUp, LOW);
+    ////attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW), wakeUp, LOW);
 
-    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+    ////LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
 
     // Disable external pin interrupt on wake up pin.
-    detachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW));
+    ////detachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW));
 
-    OLED.ssd1306_command(SSD1306_DISPLAYON);
+    ////OLED.ssd1306_command(SSD1306_DISPLAYON);
     oled_sleep = 0;
   }
 }
@@ -234,34 +230,142 @@ void timer_service() {
   ENCODER.service();
 }
 
+// Default Status Display
+void displayStatus() {
+  OLED.clearDisplay();
+  OLED.setTextSize(1);
+  OLED.setTextColor(SSD1306_WHITE);
+  // VBUS input status
+  OLED.setCursor(0, 0);
+  OLED.print("Input: ");
+  OLED.println(CHARGER.get_vbus_type_text());
+  // Charge status
+  OLED.setCursor(0, 10);
+  OLED.print("Charge:");
+  OLED.println(CHARGER.get_charging_status_text());
+  // Line
+  OLED.drawLine(1, 20, 126, 20, SSD1306_WHITE);
+  // VBUS Voltage
+  OLED.setCursor(0, 24);
+  OLED.print("VBUS:");
+  OLED.println(float(CHARGER.adc_read_vbus_volt() * 0.001), 3);
+  // VSYS Voltage
+  OLED.setCursor(68, 24);
+  OLED.print("VSYS:");
+  OLED.println(float(CHARGER.adc_read_sys_volt() * 0.001), 3);
+  // VBAT Voltage
+  OLED.setCursor(0, 34);
+  OLED.print("VBAT:");
+  OLED.println(float(CHARGER.adc_read_battery_volt() * 0.001), 3);
+  // Charge Current
+  OLED.setCursor(68, 34);
+  OLED.print("ICHG:");
+  OLED.println(float(CHARGER.adc_read_charge_current() * 0.001), 3);
+  // IC Temp
+  OLED.setCursor(0, 44);
+  OLED.print("IC");
+  OLED.print(char(247));
+  OLED.print("C:");
+  OLED.println(ntcIC(), 1);
+  // IDPM
+  OLED.setCursor(68, 44);
+  OLED.print("IDPM:");
+  OLED.println(float(CHARGER.read_idpm_limit() * 0.001), 2);
+  // Options
+  OLED.drawLine(1, 54, 126, 54, SSD1306_WHITE);
+  OLED.setCursor(10, 57);
+  OLED.print("Start");
+  OLED.setCursor(58, 57);
+  OLED.print("OTG");
+  OLED.setCursor(95, 57);
+  OLED.print("Menu");
+  switch (menuPosition) {
+    case 0:
+      OLED.setCursor(1, 57);
+      break;
+    case 1:
+      OLED.setCursor(49, 57);
+      break;
+    case 2:
+      OLED.setCursor(86, 57);
+      break;
+  }
+  OLED.print(">");
+  OLED.display();
+}
+
+void menuOption(int encoderCurr) {
+  int menuMax = 0;
+  if (menuMode == 0) {
+    menuMax = 2;
+  } else {
+    menuMax = 6;
+  }
+
+  if (encoderCurr < encoderPrev) {
+    --menuPosition;
+    if (menuPosition < 0) menuPosition = menuMax;
+  } else if (encoderCurr > encoderPrev) {
+    ++menuPosition;
+    if (menuPosition > menuMax) menuPosition = 0;
+  }
+  encoderPrev = encoderCurr;
+}
+
 // The event handler for the button.
 void handleEvent(AceButton* /* button */, uint8_t eventType, uint8_t buttonState) {
 
-  // Print out a message for all events.
+  /*
   Serial.print(F("handleEvent(): eventType: "));
   Serial.print(eventType);
   Serial.print(F("; buttonState: "));
   Serial.println(buttonState);
+*/
 
-  // Control the LED only for the Pressed and Released events.
-  // Notice that if the MCU is rebooted while the button is pressed down, no
-  // event is triggered and the LED remains off.
   switch (eventType) {
     case AceButton::kEventPressed:
+      /*
       leds[0] = CRGB::Red;
       FastLED.show();
       delay(500);
       leds[0] = CRGB::Black;
       FastLED.show();
+      mainMenu();
+      */
       break;
     case AceButton::kEventReleased:
-      leds[1] = CRGB::Green;
-      FastLED.show();
-      delay(500);
-      leds[1] = CRGB::Black;
-      FastLED.show();
+      if (!menuMode) {
+        if (menuPosition == 0) {
+          // Start
+          menuMode = 1;
+        } else if (menuPosition == 1) {
+          // OTG
+          CHARGER.enable_otg();
+        } else if (menuPosition == 2) {
+          // Menu
+          setupMenu();
+        }
+      } else {
+        menuMode = 0;
+        displayStatus();
+      }
       break;
   }
+}
+
+void setupMenu() {
+  OLED.clearDisplay();
+  OLED.setCursor(8, 0);
+  OLED.println("Charge: ");
+  OLED.setCursor(8, 10);
+  OLED.println("OTG:");
+  OLED.setCursor(8, 20);
+  OLED.print("OTG Voltage");
+  OLED.println(float(CHARGER.get_otg_volt() * 0.001), 2);
+  OLED.setCursor(8, 30);
+  OLED.print("OTG Current ");
+  OLED.println(float(CHARGER.get_otg_current() * 0.001), 2);
+  OLED.display();
 }
 
 float ntcIC() {
