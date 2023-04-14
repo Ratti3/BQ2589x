@@ -162,11 +162,11 @@ void setup() {
   //Serial.println("ADC Start");
   CHARGER.adc_start(0);
   //Serial.println("CRG V");
-  CHARGER.set_chargevoltage(4192);
+  CHARGER.set_charge_voltage(4192);
   //Serial.println("EN OTG");
   CHARGER.enable_otg();
   //Serial.println("OTG V");
-  CHARGER.set_otg_volt(5062);
+  CHARGER.set_otg_voltage(5062);
   //Serial.println("OTG I");
   CHARGER.set_otg_current(2150);
 
@@ -205,6 +205,8 @@ void loop() {
 
     if (menuMode == 0) {
       displayStatus();
+    } else {
+      displaySetupMenu();
     }
 
   } else if (oled_sleep > 60) {
@@ -278,7 +280,7 @@ void displayStatus() {
   OLED.setCursor(58, 57);
   OLED.print("OTG");
   OLED.setCursor(95, 57);
-  OLED.print("Menu");
+  OLED.print("Setup");
   switch (menuPosition) {
     case 0:
       OLED.setCursor(1, 57);
@@ -294,6 +296,7 @@ void displayStatus() {
   OLED.display();
 }
 
+// Runs when the encoder is turned
 void menuOption(int encoderCurr) {
   int menuMax = 0;
   if (menuMode == 0) {
@@ -334,37 +337,89 @@ void handleEvent(AceButton* /* button */, uint8_t eventType, uint8_t buttonState
       */
       break;
     case AceButton::kEventReleased:
-      if (!menuMode) {
+      if (menuMode) {
+        switch (menuPosition) {
+          case 0:
+            // Setup 1
+            break;
+          case 1:
+            // Setup 2
+            break;
+          case 2:
+            // Setup 3
+            break;
+          case 3:
+            // Setup 4
+            break;
+          case 4:
+            // Setup 5
+            break;
+          case 5:
+            // Exit
+            menuMode = 0;
+            menuPosition = 0;
+            displayStatus();
+            break;
+        }
+      } else {
         if (menuPosition == 0) {
           // Start
-          menuMode = 1;
+
         } else if (menuPosition == 1) {
           // OTG
           CHARGER.enable_otg();
         } else if (menuPosition == 2) {
           // Menu
-          setupMenu();
+          menuMode = 1;
+          menuPosition = 0;
+          displaySetupMenu();
         }
-      } else {
-        menuMode = 0;
-        displayStatus();
       }
       break;
   }
 }
 
-void setupMenu() {
+void displaySetupMenu() {
   OLED.clearDisplay();
-  OLED.setCursor(8, 0);
-  OLED.println("Charge: ");
-  OLED.setCursor(8, 10);
-  OLED.println("OTG:");
-  OLED.setCursor(8, 20);
-  OLED.print("OTG Voltage");
-  OLED.println(float(CHARGER.get_otg_volt() * 0.001), 2);
-  OLED.setCursor(8, 30);
-  OLED.print("OTG Current ");
-  OLED.println(float(CHARGER.get_otg_current() * 0.001), 2);
+  OLED.setCursor(34, 0);
+  OLED.println("SETUP MENU");
+  OLED.drawLine(1, 9, 126, 9, SSD1306_WHITE);
+  OLED.setCursor(0, 12);
+  OLED.print("CHG:  ");
+  OLED.print(float(CHARGER.get_charge_voltage() * 0.001), 3);
+  OLED.print("V  ");
+  OLED.print(float(CHARGER.get_charge_current() * 0.001), 3);
+  OLED.println("A");
+  OLED.setCursor(0, 22);
+  OLED.print("OTG:  ");
+  OLED.print(float(CHARGER.get_otg_voltage() * 0.001), 2);
+  OLED.print("V   ");
+  OLED.print(float(CHARGER.get_otg_current() * 0.001), 3);
+  OLED.println("A");
+  // Options
+  OLED.setCursor(50, 57);
+  OLED.print("Exit");
+  switch (menuPosition) {
+    case 0:
+      OLED.setCursor(29, 12);
+      break;
+    case 1:
+      OLED.setCursor(77, 12);
+      break;
+    case 2:
+      OLED.setCursor(29, 22);
+      break;
+    case 3:
+      OLED.setCursor(77, 22);
+      break;
+    case 4:
+      OLED.setCursor(0, 40);
+      break;
+    case 5:
+      OLED.setCursor(43, 57);
+      break;
+  }
+  OLED.print(">");
   OLED.display();
 }
 

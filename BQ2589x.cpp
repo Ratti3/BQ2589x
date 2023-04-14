@@ -152,7 +152,7 @@ int bq2589x::disable_otg()
     return update_bits(BQ2589X_REG_03, BQ2589X_OTG_CONFIG_MASK, val);
 }
 
-int bq2589x::set_otg_volt(uint16_t volt)
+int bq2589x::set_otg_voltage(uint16_t volt)
 {
     uint8_t val = 0;
 
@@ -166,7 +166,7 @@ int bq2589x::set_otg_volt(uint16_t volt)
     return update_bits(BQ2589X_REG_0A, BQ2589X_BOOSTV_MASK, val);
 }
 
-int bq2589x::get_otg_volt()
+int bq2589x::get_otg_voltage()
 {
     uint8_t val;
     int volt;
@@ -382,6 +382,24 @@ int bq2589x::set_charge_current(int curr)
     return update_bits(BQ2589X_REG_04, BQ2589X_ICHG_MASK, ichg << BQ2589X_ICHG_SHIFT);
 }
 
+int bq2589x::get_charge_current()
+{
+    uint8_t val;
+    int current;
+    int ret;
+
+    ret = read_byte(&val, BQ2589X_REG_04);
+    if (ret)
+    {
+        return ret;
+    }
+    else
+    {
+        current = (BQ2589X_ICHG_BASE + ((val & BQ2589X_ICHG_MASK) >> BQ2589X_ICHG_SHIFT) * BQ2589X_ICHG_LSB);
+        return current;
+    }
+}
+
 int bq2589x::set_term_current(int curr)
 {
     uint8_t iterm;
@@ -400,12 +418,30 @@ int bq2589x::set_prechg_current(int curr)
     return update_bits(BQ2589X_REG_05, BQ2589X_IPRECHG_MASK, iprechg << BQ2589X_IPRECHG_SHIFT);
 }
 
-int bq2589x::set_chargevoltage(int volt)
+int bq2589x::set_charge_voltage(int volt)
 {
     uint8_t val;
 
     val = (volt - BQ2589X_VREG_BASE) / BQ2589X_VREG_LSB;
     return update_bits(BQ2589X_REG_06, BQ2589X_VREG_MASK, val << BQ2589X_VREG_SHIFT);
+}
+
+int bq2589x::get_charge_voltage()
+{
+    uint8_t val;
+    int volt;
+    int ret;
+
+    ret = read_byte(&val, BQ2589X_REG_06);
+    if (ret)
+    {
+        return ret;
+    }
+    else
+    {
+        volt = (BQ2589X_VREG_BASE + ((val & BQ2589X_VREG_MASK) >> BQ2589X_VREG_SHIFT) * BQ2589X_VREG_LSB);
+        return volt;
+    }
 }
 
 int bq2589x::set_input_volt_limit(int volt)

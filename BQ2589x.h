@@ -34,8 +34,8 @@ public:
     String get_vbus_type_text();
     int enable_otg();
     int disable_otg();
-    int set_otg_volt(uint16_t volt);
-    int get_otg_volt();
+    int set_otg_voltage(uint16_t volt);
+    int get_otg_voltage();
     int set_otg_current(int curr);
     int get_otg_current();
     int enable_charger();
@@ -48,9 +48,11 @@ public:
     int adc_read_temperature();
     int adc_read_charge_current();
     int set_charge_current(int curr);
+    int get_charge_current();
     int set_term_current(int curr);
     int set_prechg_current(int curr);
-    int set_chargevoltage(int volt);
+    int set_charge_voltage(int volt);
+    int get_charge_voltage();
     int set_input_volt_limit(int volt);
     int set_input_current_limit(int curr);
     int set_vindpm_offset(int offset);
