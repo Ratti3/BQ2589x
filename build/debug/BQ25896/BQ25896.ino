@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with Foo
 */
 
 #include <Wire.h>
-#include <BQ2589x.h>
+#include <BQ2589x.h>           // v1.0    | https://github.com/Ratti3/BQ2589x
 #include <FastLED.h>           // v3.5.0  | https://github.com/FastLED/FastLED
 #include <TimerOne.h>          // v1.1.1  | https://github.com/PaulStoffregen/TimerOne
 #include <LowPower.h>          // v2.2    | https://github.com/LowPowerLab/LowPower
@@ -154,9 +154,9 @@ void setup() {
   CHARGER.adc_start(0);
   CHARGER.disable_charger();
   setChargeVoltage(3);
-  setChargeCurrent(6);
+  setChargeCurrent(5);
   setOTGVoltage(1);
-  setOTGCurrent(5);
+  setOTGCurrent(4);
 
   setupDisplay();
 }
