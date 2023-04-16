@@ -336,7 +336,6 @@ int bq2589x::adc_read_battery_volt()
     }
     else
     {
-
         volt = (BQ2589X_BATV_BASE + ((val & BQ2589X_BATV_MASK) >> BQ2589X_BATV_SHIFT) * BQ2589X_BATV_LSB);
         return volt;
     }

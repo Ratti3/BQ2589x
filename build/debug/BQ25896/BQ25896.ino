@@ -17,13 +17,13 @@ You should have received a copy of the GNU General Public License along with Foo
 
 #include <Wire.h>
 #include <BQ2589x.h>
-#include <FastLED.h>          // v3.5.0  | https://github.com/FastLED/FastLED
-#include <TimerOne.h>         // v1.1.1  | https://github.com/PaulStoffregen/TimerOne
-#include <LowPower.h>         // v2.2    | https://github.com/LowPowerLab/LowPower
-#include <AceButton.h>        // v1.9.2  | https://github.com/bxparks/AceButton
-#include <BasicEncoder.h>     // v1.1.4  | https://github.com/micromouseonline/BasicEncoder
-#include <Adafruit_GFX.h>     // v1.11.5 | https://github.com/adafruit/Adafruit-GFX-Library
-#include <Adafruit_SSD1306.h> // v2.5.7  | https://github.com/adafruit/Adafruit_SSD1306
+#include <FastLED.h>           // v3.5.0  | https://github.com/FastLED/FastLED
+#include <TimerOne.h>          // v1.1.1  | https://github.com/PaulStoffregen/TimerOne
+#include <LowPower.h>          // v2.2    | https://github.com/LowPowerLab/LowPower
+#include <AceButton.h>         // v1.9.2  | https://github.com/bxparks/AceButton
+#include <BasicEncoder.h>      // v1.1.4  | https://github.com/micromouseonline/BasicEncoder
+#include <Adafruit_GFX.h>      // v1.11.5 | https://github.com/adafruit/Adafruit-GFX-Library
+#include <Adafruit_SSD1306.h>  // v2.5.7  | https://github.com/adafruit/Adafruit_SSD1306
 
 /*  ____________
   -|            |-  A0 : TH_IC   [AI]         NTC for monitoring temperature close to the IC
@@ -40,6 +40,9 @@ You should have received a copy of the GNU General Public License along with Foo
   [DI] = Digital In, [DO] = Digital Out, [AI] = Analog In, [AO] = Analog Out
 */
 
+byte verHigh = 1;
+byte verLow = 0;
+
 // BQ25896
 #define PIN_OTG A2         // BQ25896 OTG Digital Input
 #define PIN_CE A3          // BQ25896 CE Digital Input
@@ -47,6 +50,14 @@ You should have received a copy of the GNU General Public License along with Foo
 #define PIN_PSEL 10        // BQ25896 PSEL Digital Input
 #define BQ2589x_ADDR 0x6B  // BQ25896 I2C Address
 bq2589x CHARGER;
+int arrayVCHG[5] = { 3840, 4000, 4096, 4192, 4208 };            // Charge volage values
+int menuPositionVCHG = 3;                                       // Set default charge voltage to 4.92V
+int arrayICHG[7] = { 512, 768, 1024, 1536, 2048, 2560, 3072 };  // Charge current values
+int menuPositionICHG = 6;                                       // Set default charge current to 3A
+int arrayVOTG[3] = { 4998, 5062, 5126 };                        // Boost voltage values
+int menuPositionVOTG = 1;                                       // Set default boost voltage to 5.062V
+int arrayIOTG[7] = { 500, 750, 1200, 1400, 1650, 1875, 2150 };  // Boost current values
+int menuPositionIOTG = 6;                                       // Set default boost current to 2.15A
 
 // AceButton
 #define PIN_ENCODER_SW 7        // SW1 PIN
@@ -66,6 +77,7 @@ bool stateLED0 = 0;
 #define SCREEN_ADDRESS 0x3C  // OLED Address
 Adafruit_SSD1306 OLED(128, 64, &Wire, -1);
 unsigned long oled_sleep = 0;
+byte oledRotation = 2;
 
 // Rotary Encoder, Timer & Menu
 #define PIN_ENCA A4  // Rotary Encoder PIN A
@@ -76,6 +88,9 @@ unsigned long now = 0;
 int encoderPrev = 0;
 bool menuMode = 0;
 int menuPosition = 0;
+bool justWokeUp = 0;
+int arraySleep[4] = { 30, 60, 120, 300 };
+int settingsSleep = 1;
 
 // IC NTC Thermistor
 #define PIN_THERMISTOR A0  // NTC Thermistor PIN
@@ -126,15 +141,11 @@ void setup() {
   buttonConfig->setLongPressDelay(LONGPRESSDURATION);
 
   // FastLED setup
-  FastLED.addLeds<WS2812, PIN_WS2812>(leds, NUM_LEDS);
+  FastLED.addLeds<WS2812, PIN_WS2812, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(LED_BRIGHTNESS);
-
-  delay(250);
 
   // OLED setup
   OLED.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
-  OLED.setRotation(2);
-  OLED.clearDisplay();
 
   // Timer1 setup
   Timer1.initialize(1000);
@@ -144,43 +155,15 @@ void setup() {
   // BQ25896 setup
   CHARGER.begin(&Wire, BQ2589x_ADDR);
 
-  // Boot test LEDs and buzzer
-  leds[0] = CRGB::Red;
-  tone(PIN_BUZZER, 2000, 500);
-  FastLED.show();
-  delay(500);
-  leds[0] = CRGB::Black;
-  FastLED.show();
-  leds[1] = CRGB::Green;
-  tone(PIN_BUZZER, 4000, 500);
-  FastLED.show();
-  delay(500);
-  leds[1] = CRGB::Black;
-  FastLED.show();
-
-  //Serial.println("Dis WDT");
   CHARGER.disable_watchdog_timer();
-  //Serial.println("ADC Start");
   CHARGER.adc_start(0);
-  //Serial.println("CRG V");
-  CHARGER.set_charge_voltage(4192);
-  //Serial.println("OTG V");
-  CHARGER.set_otg_voltage(5062);
-  //Serial.println("OTG I");
-  CHARGER.set_otg_current(2150);
   CHARGER.disable_charger();
+  setChargeVoltage(3);
+  setChargeCurrent(6);
+  setOTGVoltage(1);
+  setOTGCurrent(6);
 
-  /*
-  // Read all REG values
-  for (byte i = 0; i <=20; i++) {
-    Serial.print(i, HEX); Serial.print(": "); Serial.println(CHARGER.read_reg(i), BIN);
-    delay(10);
-  }
-
-  Serial.print(0x0A, HEX);
-  Serial.print(": ");
-  Serial.println(CHARGER.read_reg(0x0A), BIN);
-  */
+  setupDisplay();
 }
 
 void loop() {
@@ -188,7 +171,6 @@ void loop() {
   SW1.check();
 
   // Check for Encoder turns
-  //int encoder_change = ENCODER.get_change();
   if (ENCODER.get_change()) {
     //Serial.println(ENCODER.get_count());
     //OLED.ssd1306_command(SSD1306_DISPLAYON);
@@ -209,23 +191,24 @@ void loop() {
       displaySetupMenu();
     }
 
-  } else if (oled_sleep > 60) {
-    ////OLED.ssd1306_command(SSD1306_DISPLAYOFF);
+  } else if (oled_sleep > arraySleep[settingsSleep]) {
+    OLED.ssd1306_command(SSD1306_DISPLAYOFF);
 
     // Allow wake up pin to trigger interrupt on low.
-    ////attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW), wakeUp, LOW);
+    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW), wakeUp, LOW);
 
-    ////LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
 
     // Disable external pin interrupt on wake up pin.
-    ////detachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW));
+    detachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW));
 
-    ////OLED.ssd1306_command(SSD1306_DISPLAYON);
+    OLED.ssd1306_command(SSD1306_DISPLAYON);
     oled_sleep = 0;
   }
 }
 
 void wakeUp() {
+  justWokeUp = 1;
 }
 
 void timer_service() {
@@ -283,9 +266,9 @@ void displayStatus() {
   }
   OLED.setCursor(58, 56);
   if (CHARGER.is_otg_enabled()) {
-      OLED.print("Stop");
+    OLED.print("Stop");
   } else {
-      OLED.print("OTG");
+    OLED.print("OTG");
   }
   OLED.setCursor(95, 56);
   OLED.print("Setup");
@@ -310,7 +293,7 @@ void menuOption(int encoderCurr) {
   if (menuMode == 0) {
     menuMax = 2;
   } else {
-    menuMax = 4;
+    menuMax = 6;
   }
 
   if (encoderCurr < encoderPrev) {
@@ -345,22 +328,50 @@ void handleEvent(AceButton* /* button */, uint8_t eventType, uint8_t buttonState
       */
       break;
     case AceButton::kEventReleased:
+      if (justWokeUp) {
+        justWokeUp = 0;
+        break;
+      }
       if (menuMode) {
         switch (menuPosition) {
           case 0:
-            // Setup 1
-            setChargeVoltage();
+            // Set Charge Voltage
+            ++menuPositionVCHG;
+            if (menuPositionVCHG > 4) menuPositionVCHG = 0;
+            setChargeVoltage(menuPositionVCHG);
             break;
           case 1:
-            // Setup 2
+            // Set Charge Current
+            ++menuPositionICHG;
+            if (menuPositionICHG > 6) menuPositionICHG = 0;
+            setChargeCurrent(menuPositionICHG);
             break;
           case 2:
-            // Setup 3
+            // Set Boost Voltage
+            ++menuPositionVOTG;
+            if (menuPositionVOTG > 2) menuPositionVOTG = 0;
+            setOTGVoltage(menuPositionVOTG);
             break;
           case 3:
-            // Setup 4
+            // Set Boost Current
+            ++menuPositionIOTG;
+            if (menuPositionIOTG > 6) menuPositionIOTG = 0;
+            setOTGCurrent(menuPositionIOTG);
             break;
           case 4:
+            if (oledRotation == 2) {
+              oledRotation = 0;
+            } else {
+              oledRotation = 2;
+            }
+            OLED.setRotation(oledRotation);
+            break;
+          case 5:
+            ++settingsSleep;
+            if (settingsSleep > 3) settingsSleep = 0;
+            arraySleep[settingsSleep];
+            break;
+          case 6:
             // Exit
             menuMode = 0;
             menuPosition = 0;
@@ -406,13 +417,25 @@ void displaySetupMenu() {
   OLED.println("A");
   OLED.setCursor(0, 22);
   OLED.print("OTG:  ");
-  OLED.print(float(CHARGER.get_otg_voltage() * 0.001), 2);
-  OLED.print("V   ");
+  OLED.print(float(CHARGER.get_otg_voltage() * 0.001), 3);
+  OLED.print("V  ");
   OLED.print(float(CHARGER.get_otg_current() * 0.001), 3);
   OLED.println("A");
+  OLED.setCursor(7, 32);
+  OLED.print("Rotate Display: ");
+  if (oledRotation == 0) {
+    OLED.print("0");
+  } else {
+    OLED.print("180");
+  }
+  OLED.println(char(247));
+  OLED.setCursor(7, 42);
+  OLED.print("Sleep Timer: ");
+  OLED.print(arraySleep[settingsSleep]);
+  OLED.println("s");
   // Options
   OLED.setCursor(50, 57);
-  OLED.print("Exit");
+  OLED.print("EXIT");
   switch (menuPosition) {
     case 0:
       OLED.setCursor(29, 12);
@@ -427,14 +450,33 @@ void displaySetupMenu() {
       OLED.setCursor(77, 22);
       break;
     case 4:
-      OLED.setCursor(0, 40);
+      OLED.setCursor(0, 32);
       break;
     case 5:
+      OLED.setCursor(0, 42);
+      break;
+    case 6:
       OLED.setCursor(43, 57);
       break;
   }
   OLED.print(">");
   OLED.display();
+}
+
+void setChargeVoltage(int volt) {
+  CHARGER.set_charge_voltage(arrayVCHG[volt]);
+}
+
+void setChargeCurrent(int curr) {
+  CHARGER.set_charge_current(arrayICHG[curr]);
+}
+
+void setOTGVoltage(int volt) {
+  CHARGER.set_otg_voltage(arrayVOTG[volt]);
+}
+
+void setOTGCurrent(int curr) {
+  CHARGER.set_otg_current(arrayIOTG[curr]);
 }
 
 float ntcIC() {
@@ -500,22 +542,36 @@ void chargeLED() {
   }
 }
 
-void setChargeVoltage() {
-  /*
-  3840 + 256 + 64 + 32 + 16
-4208
+void setupDisplay() {
+  leds[0] = CRGB::Red;
+  leds[1] = CRGB::Red;
+  FastLED.show();
 
-3840 + 256 + 64 + 32
-4192
+  OLED.setRotation(oledRotation);
+  OLED.clearDisplay();
+  OLED.setTextSize(1);
+  OLED.setTextColor(SSD1306_WHITE);
+  OLED.setCursor(43, 0);
+  OLED.println("BQ25896");
+  OLED.setCursor(20, 10);
+  OLED.println("Battery Charger");
+  OLED.setCursor(16, 33);
+  OLED.println("Ratti3 Tech Corp");
+  OLED.setCursor(28, 56);
+  OLED.print("Version: ");
+  OLED.print(verHigh);
+  OLED.print(".");
+  OLED.println(verLow);
+  OLED.display();
+  delay(3000);
+  OLED.clearDisplay();
 
-3840 + 256
-4096
+  leds[0] = CRGB::Black;
+  leds[1] = CRGB::Black;
+  FastLED.show();
 
-3840 + 128 + 32
-4000
-
-3840
-  */
-
-  uint8_t volt;
+  tone(PIN_BUZZER, 3000, 300);
+  delay(500);
+  tone(PIN_BUZZER, 4000, 300);
+  delay(500);
 }
