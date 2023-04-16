@@ -17,13 +17,13 @@ You should have received a copy of the GNU General Public License along with Foo
 
 #include <Wire.h>
 #include <BQ2589x.h>
-#include <FastLED.h>
-#include <TimerOne.h>
-#include <LowPower.h>
-#include <AceButton.h>
-#include <BasicEncoder.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <FastLED.h>          // v3.5.0  | https://github.com/FastLED/FastLED
+#include <TimerOne.h>         // v1.1.1  | https://github.com/PaulStoffregen/TimerOne
+#include <LowPower.h>         // v2.2    | https://github.com/LowPowerLab/LowPower
+#include <AceButton.h>        // v1.9.2  | https://github.com/bxparks/AceButton
+#include <BasicEncoder.h>     // v1.1.4  | https://github.com/micromouseonline/BasicEncoder
+#include <Adafruit_GFX.h>     // v1.11.5 | https://github.com/adafruit/Adafruit-GFX-Library
+#include <Adafruit_SSD1306.h> // v2.5.7  | https://github.com/adafruit/Adafruit_SSD1306
 
 /*  ____________
   -|            |-  A0 : TH_IC   [AI]         NTC for monitoring temperature close to the IC
@@ -106,11 +106,11 @@ void setup() {
 
   // OTG [LOW = Off, HIGH = Boost]
   pinMode(PIN_OTG, OUTPUT);
-  digitalWrite(PIN_OTG, LOW);
+  digitalWrite(PIN_OTG, HIGH);
 
   // CE [LOW = Charge, HIGH = Idle]
   pinMode(PIN_CE, OUTPUT);
-  digitalWrite(PIN_CE, HIGH);
+  digitalWrite(PIN_CE, LOW);
 
   // PSEL [LOW = Adapter, HIGH = USB]
   pinMode(PIN_PSEL, OUTPUT);
@@ -133,6 +133,7 @@ void setup() {
 
   // OLED setup
   OLED.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  OLED.setRotation(2);
   OLED.clearDisplay();
 
   // Timer1 setup
@@ -163,12 +164,11 @@ void setup() {
   CHARGER.adc_start(0);
   //Serial.println("CRG V");
   CHARGER.set_charge_voltage(4192);
-  //Serial.println("EN OTG");
-  CHARGER.enable_otg();
   //Serial.println("OTG V");
   CHARGER.set_otg_voltage(5062);
   //Serial.println("OTG I");
   CHARGER.set_otg_current(2150);
+  CHARGER.disable_charger();
 
   /*
   // Read all REG values
@@ -248,48 +248,56 @@ void displayStatus() {
   // Line
   OLED.drawLine(1, 20, 126, 20, SSD1306_WHITE);
   // VBUS Voltage
-  OLED.setCursor(0, 24);
+  OLED.setCursor(0, 23);
   OLED.print("VBUS:");
   OLED.println(float(CHARGER.adc_read_vbus_volt() * 0.001), 3);
   // VSYS Voltage
-  OLED.setCursor(68, 24);
+  OLED.setCursor(68, 23);
   OLED.print("VSYS:");
   OLED.println(float(CHARGER.adc_read_sys_volt() * 0.001), 3);
   // VBAT Voltage
-  OLED.setCursor(0, 34);
+  OLED.setCursor(0, 33);
   OLED.print("VBAT:");
   OLED.println(float(CHARGER.adc_read_battery_volt() * 0.001), 3);
   // Charge Current
-  OLED.setCursor(68, 34);
+  OLED.setCursor(68, 33);
   OLED.print("ICHG:");
   OLED.println(float(CHARGER.adc_read_charge_current() * 0.001), 3);
   // IC Temp
-  OLED.setCursor(0, 44);
+  OLED.setCursor(0, 43);
   OLED.print("IC");
   OLED.print(char(247));
   OLED.print("C:");
   OLED.println(ntcIC(), 1);
   // IDPM
-  OLED.setCursor(68, 44);
+  OLED.setCursor(68, 43);
   OLED.print("IDPM:");
   OLED.println(float(CHARGER.read_idpm_limit() * 0.001), 2);
   // Options
-  OLED.drawLine(1, 54, 126, 54, SSD1306_WHITE);
-  OLED.setCursor(10, 57);
-  OLED.print("Start");
-  OLED.setCursor(58, 57);
-  OLED.print("OTG");
-  OLED.setCursor(95, 57);
+  OLED.drawLine(1, 53, 126, 53, SSD1306_WHITE);
+  OLED.setCursor(10, 56);
+  if (CHARGER.is_charge_enabled()) {
+    OLED.print("Stop");
+  } else {
+    OLED.print("Charge");
+  }
+  OLED.setCursor(58, 56);
+  if (CHARGER.is_otg_enabled()) {
+      OLED.print("Stop");
+  } else {
+      OLED.print("OTG");
+  }
+  OLED.setCursor(95, 56);
   OLED.print("Setup");
   switch (menuPosition) {
     case 0:
-      OLED.setCursor(1, 57);
+      OLED.setCursor(1, 56);
       break;
     case 1:
-      OLED.setCursor(49, 57);
+      OLED.setCursor(49, 56);
       break;
     case 2:
-      OLED.setCursor(86, 57);
+      OLED.setCursor(86, 56);
       break;
   }
   OLED.print(">");
@@ -302,7 +310,7 @@ void menuOption(int encoderCurr) {
   if (menuMode == 0) {
     menuMax = 2;
   } else {
-    menuMax = 6;
+    menuMax = 4;
   }
 
   if (encoderCurr < encoderPrev) {
@@ -341,6 +349,7 @@ void handleEvent(AceButton* /* button */, uint8_t eventType, uint8_t buttonState
         switch (menuPosition) {
           case 0:
             // Setup 1
+            setChargeVoltage();
             break;
           case 1:
             // Setup 2
@@ -352,9 +361,6 @@ void handleEvent(AceButton* /* button */, uint8_t eventType, uint8_t buttonState
             // Setup 4
             break;
           case 4:
-            // Setup 5
-            break;
-          case 5:
             // Exit
             menuMode = 0;
             menuPosition = 0;
@@ -364,10 +370,18 @@ void handleEvent(AceButton* /* button */, uint8_t eventType, uint8_t buttonState
       } else {
         if (menuPosition == 0) {
           // Start
-
+          if (CHARGER.is_charge_enabled()) {
+            CHARGER.disable_charger();
+          } else {
+            CHARGER.enable_charger();
+          }
         } else if (menuPosition == 1) {
           // OTG
-          CHARGER.enable_otg();
+          if (CHARGER.is_otg_enabled()) {
+            CHARGER.disable_otg();
+          } else {
+            CHARGER.enable_otg();
+          }
         } else if (menuPosition == 2) {
           // Menu
           menuMode = 1;
@@ -484,4 +498,24 @@ void chargeLED() {
       }
       break;
   }
+}
+
+void setChargeVoltage() {
+  /*
+  3840 + 256 + 64 + 32 + 16
+4208
+
+3840 + 256 + 64 + 32
+4192
+
+3840 + 256
+4096
+
+3840 + 128 + 32
+4000
+
+3840
+  */
+
+  uint8_t volt;
 }

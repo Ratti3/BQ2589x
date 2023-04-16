@@ -152,6 +152,17 @@ int bq2589x::disable_otg()
     return update_bits(BQ2589X_REG_03, BQ2589X_OTG_CONFIG_MASK, val);
 }
 
+bool bq2589x::is_otg_enabled()
+{
+    uint8_t val;
+
+    read_byte(&val, BQ2589X_REG_03);
+    val &= BQ2589X_OTG_CONFIG_MASK;
+    val >>= BQ2589X_OTG_CONFIG_SHIFT;
+
+    return (bool)(val);
+}
+
 int bq2589x::set_otg_voltage(uint16_t volt)
 {
     uint8_t val = 0;
@@ -260,6 +271,31 @@ int bq2589x::disable_charger()
     uint8_t val = BQ2589X_CHG_DISABLE << BQ2589X_CHG_CONFIG_SHIFT;
 
     return update_bits(BQ2589X_REG_03, BQ2589X_CHG_CONFIG_MASK, val);
+}
+
+bool bq2589x::is_charge_enabled()
+{
+    uint8_t val;
+
+    read_byte(&val, BQ2589X_REG_03);
+    val &= BQ2589X_CHG_CONFIG_MASK;
+    val >>= BQ2589X_CHG_CONFIG_SHIFT;
+
+    return (bool)(val);
+}
+
+int bq2589x::enable_bat_loaden()
+{
+    uint8_t val = BQ2589X_BAT_LOADEN_ENABLE << BQ2589X_BAT_LOADEN_SHIFT;
+
+    return update_bits(BQ2589X_REG_03, BQ2589X_BAT_LOADEN_MASK, val);
+}
+
+int bq2589x::disable_bat_loaden()
+{
+    uint8_t val = BQ2589X_BAT_LOADEN_DISABLE << BQ2589X_BAT_LOADEN_SHIFT;
+
+    return update_bits(BQ2589X_REG_03, BQ2589X_BAT_LOADEN_MASK, val);
 }
 
 /* interfaces that can be called by other module */

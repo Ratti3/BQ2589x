@@ -34,12 +34,16 @@ public:
     String get_vbus_type_text();
     int enable_otg();
     int disable_otg();
+    bool is_otg_enabled();
     int set_otg_voltage(uint16_t volt);
     int get_otg_voltage();
     int set_otg_current(int curr);
     int get_otg_current();
     int enable_charger();
     int disable_charger();
+    bool is_charge_enabled();
+    int enable_bat_loaden();
+    int disable_bat_loaden();
     int adc_start(bool oneshot);
     int adc_stop();
     int adc_read_battery_volt();
