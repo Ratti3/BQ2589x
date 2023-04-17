@@ -16,11 +16,12 @@ You should have received a copy of the GNU General Public License along with Foo
 */
 
 #include <Wire.h>
+#include <EEPROM.h>            // v2.0    | https://github.com/PaulStoffregen/EEPROM
 #include <BQ2589x.h>           // v1.0    | https://github.com/Ratti3/BQ2589x
 #include <FastLED.h>           // v3.5.0  | https://github.com/FastLED/FastLED
 #include <TimerOne.h>          // v1.1.1  | https://github.com/PaulStoffregen/TimerOne
 #include <LowPower.h>          // v2.2    | https://github.com/LowPowerLab/LowPower
-#include <AceButton.h>         // v1.9.2  | https://github.com/bxparks/AceButton
+#include <AbleButtons.h>       // v0.3.0  | https://github.com/jsware/able-buttons
 #include <BasicEncoder.h>      // v1.1.4  | https://github.com/micromouseonline/BasicEncoder
 #include <Adafruit_GFX.h>      // v1.11.5 | https://github.com/adafruit/Adafruit-GFX-Library
 #include <Adafruit_SSD1306.h>  // v2.5.7  | https://github.com/adafruit/Adafruit_SSD1306
@@ -50,20 +51,19 @@ byte verLow = 0;
 #define PIN_PSEL 10        // BQ25896 PSEL Digital Input
 #define BQ2589x_ADDR 0x6B  // BQ25896 I2C Address
 bq2589x CHARGER;
-int arrayVCHG[5] = { 3840, 4000, 4096, 4192, 4208 };            // Charge volage values
-byte menuPositionVCHG = 3;                                      // Set default charge voltage to 4.92V
-int arrayICHG[6] = { 512, 1024, 1536, 2048, 2560, 3072 };       // Charge current values
-byte menuPositionICHG = 5;                                      // Set default charge current to 3A
-int arrayVOTG[3] = { 4998, 5062, 5126 };                        // Boost voltage values
-byte menuPositionVOTG = 1;                                      // Set default boost voltage to 5.062V
-int arrayIOTG[5] = { 500, 750, 1200, 1650, 2150 };  // Boost current values
-byte menuPositionIOTG = 4;                                      // Set default boost current to 2.15A
+int arrayVCHG[5] = { 3840, 4000, 4096, 4192, 4208 };       // Charge volage values
+byte menuPositionVCHG = 3;                                 // Set default charge voltage to 4.92V
+int arrayICHG[6] = { 512, 1024, 1536, 2048, 2560, 3072 };  // Charge current values
+byte menuPositionICHG = 5;                                 // Set default charge current to 3A
+int arrayVOTG[3] = { 4998, 5062, 5126 };                   // Boost voltage values
+byte menuPositionVOTG = 1;                                 // Set default boost voltage to 5.062V
+int arrayIOTG[5] = { 500, 750, 1200, 1650, 2150 };         // Boost current values
+byte menuPositionIOTG = 4;                                 // Set default boost current to 2.15A
 
-// AceButton
-#define PIN_ENCODER_SW 7  // SW1 PIN
-using namespace ace_button;
-AceButton SW1(PIN_ENCODER_SW);
-void handleEvent(AceButton*, uint8_t, uint8_t);
+// AbleButtons
+#define PIN_ENCODER_SW 7                 // SW1 PIN
+using Button = AblePullupClickerButton;  // Button type
+Button SW1(PIN_ENCODER_SW);              // The button to check is on pin
 
 // FastLED
 #define PIN_WS2812 11  // WS2812B Data PIN
@@ -73,7 +73,9 @@ CRGB leds[NUM_LEDS];
 bool stateLED0 = 0;
 
 // OLED
-#define SCREEN_ADDRESS 0x3C  // OLED Address
+#define OLED_ADDRESS 0x3C  // OLED Address
+#define OLED_BRIGHTNESS 0x01
+#define OLED_BRIGHTNESSREG 0x81
 Adafruit_SSD1306 OLED(128, 64, &Wire, -1);
 unsigned long oled_sleep = 0;
 byte oledRotation = 2;
@@ -130,18 +132,16 @@ void setup() {
   pinMode(PIN_PSEL, OUTPUT);
   digitalWrite(PIN_PSEL, LOW);
 
-  // AceButton setup
+  // AbleButtons setup
   pinMode(PIN_ENCODER_SW, INPUT);
-  ButtonConfig* buttonConfig = SW1.getButtonConfig();
-  buttonConfig->setEventHandler(handleEvent);
-  buttonConfig->setFeature(ButtonConfig::kFeatureSuppressAfterClick);
+  SW1.begin();
 
   // FastLED setup
   FastLED.addLeds<WS2812, PIN_WS2812, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(LED_BRIGHTNESS);
 
   // OLED setup
-  OLED.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+  OLED.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
 
   // Timer1 setup
   Timer1.initialize(1000);
@@ -158,15 +158,21 @@ void setup() {
   setOTGVoltage(1);
   setOTGCurrent(4);
 
+  // Display version on boot up
   setupDisplay();
 }
 
 void loop() {
   // Check for SW1 (Encoder Switch) presses
-  SW1.check();
+  SW1.handle();
+
+  if (SW1.resetClicked()) {  // Reset the click, indicating if it had been clicked.
+    buttonPressed();
+  }
 
   // Check for Encoder turns
   if (ENCODER.get_change()) {
+    OLED.dim(0);
     OLED.ssd1306_command(SSD1306_DISPLAYON);
     oled_sleep = 0;
     tone(PIN_BUZZER, 6000, 100);
@@ -175,32 +181,35 @@ void loop() {
 
   now = millis();
 
-  if (now - last_change > 1000 && oled_sleep <= arraySleep[settingsSleep]) {
+  unsigned int aSleep = arraySleep[settingsSleep];
+  if (now - last_change > 1000 && oled_sleep <= aSleep) {
     last_change = now;
     oled_sleep++;
-
     if (menuMode == 0) {
       displayStatus();
     } else {
       displaySetupMenu();
     }
     chargeLED();
-
-  } else if (oled_sleep > arraySleep[settingsSleep] && (!CHARGER.is_charge_enabled() || !CHARGER.is_otg_enabled())) {
+  } else if (oled_sleep > aSleep && (CHARGER.is_charge_enabled() || CHARGER.is_otg_enabled())) {
+    OLED.dim(1);
+    OLED.ssd1306_command(SSD1306_DISPLAYOFF);
+  } else if (oled_sleep > aSleep) {
+    OLED.dim(1);
     OLED.ssd1306_command(SSD1306_DISPLAYOFF);
 
     // Allow wake up pin to trigger interrupt on low.
-    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW), wakeUp, LOW);
+    attachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW), wakeUp, 0);
 
+    // Put the ATMEGA32U4 to sleep
     LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
 
     // Disable external pin interrupt on wake up pin.
     detachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW));
 
+    OLED.dim(0);
     OLED.ssd1306_command(SSD1306_DISPLAYON);
     oled_sleep = 0;
-  } else if (oled_sleep > arraySleep[settingsSleep]) {
-    OLED.ssd1306_command(SSD1306_DISPLAYOFF);
   }
 }
 
@@ -307,86 +316,91 @@ void menuOption(int encoderCurr) {
 }
 
 // The event handler for the button.
-void handleEvent(AceButton* /* button */, uint8_t eventType, uint8_t buttonState) {
-  switch (eventType) {
-    case AceButton::kEventReleased:
-      tone(PIN_BUZZER, 4000, 100);
-      if (justWokeUp) {
-        justWokeUp = 0;
+void buttonPressed() {
+
+  tone(PIN_BUZZER, 4000, 100);
+  if (justWokeUp) {
+    justWokeUp = 0;
+    return;
+  }
+  if (menuMode) {
+    switch (menuPosition) {
+      case 0:
+        // Set Charge Voltage
+        ++menuPositionVCHG;
+        if (menuPositionVCHG > 4) menuPositionVCHG = 0;
+        setChargeVoltage(menuPositionVCHG);
         break;
-      }
-      if (menuMode) {
-        switch (menuPosition) {
-          case 0:
-            // Set Charge Voltage
-            ++menuPositionVCHG;
-            if (menuPositionVCHG > 4) menuPositionVCHG = 0;
-            setChargeVoltage(menuPositionVCHG);
-            break;
-          case 1:
-            // Set Charge Current
-            ++menuPositionICHG;
-            if (menuPositionICHG > 5) menuPositionICHG = 0;
-            setChargeCurrent(menuPositionICHG);
-            break;
-          case 2:
-            // Set Boost Voltage
-            ++menuPositionVOTG;
-            if (menuPositionVOTG > 2) menuPositionVOTG = 0;
-            setOTGVoltage(menuPositionVOTG);
-            break;
-          case 3:
-            // Set Boost Current
-            ++menuPositionIOTG;
-            if (menuPositionIOTG > 4) menuPositionIOTG = 0;
-            setOTGCurrent(menuPositionIOTG);
-            break;
-          case 4:
-            if (oledRotation == 2) {
-              oledRotation = 0;
-            } else {
-              oledRotation = 2;
-            }
-            OLED.setRotation(oledRotation);
-            break;
-          case 5:
-            ++settingsSleep;
-            if (settingsSleep > 2) settingsSleep = 0;
-            arraySleep[settingsSleep];
-            break;
-          case 6:
-            // Exit
-            menuMode = 0;
-            menuPosition = 0;
-            displayStatus();
-            break;
+      case 1:
+        // Set Charge Current
+        ++menuPositionICHG;
+        if (menuPositionICHG > 5) menuPositionICHG = 0;
+        setChargeCurrent(menuPositionICHG);
+        break;
+      case 2:
+        // Set Boost Voltage
+        ++menuPositionVOTG;
+        if (menuPositionVOTG > 2) menuPositionVOTG = 0;
+        setOTGVoltage(menuPositionVOTG);
+        break;
+      case 3:
+        // Set Boost Current
+        ++menuPositionIOTG;
+        if (menuPositionIOTG > 4) menuPositionIOTG = 0;
+        setOTGCurrent(menuPositionIOTG);
+        break;
+      case 4:
+        if (oledRotation == 2) {
+          oledRotation = 0;
+        } else {
+          oledRotation = 2;
         }
+        OLED.setRotation(oledRotation);
+        break;
+      case 5:
+        ++settingsSleep;
+        if (settingsSleep > 2) settingsSleep = 0;
+        ////arraySleep[settingsSleep];
+        break;
+      case 6:
+        // Exit
+        saveEEPROM(10, menuPositionVCHG);
+        saveEEPROM(20, menuPositionICHG);
+        saveEEPROM(30, menuPositionVOTG);
+        saveEEPROM(40, menuPositionIOTG);
+        saveEEPROM(50, oledRotation);
+        saveEEPROM(60, settingsSleep);
+        menuMode = 0;
+        menuPosition = 0;
+        displayStatus();
+        Serial.println(readEEPROM(10));
+        Serial.println(readEEPROM(20));
+        break;
+    }
+  } else {
+    if (menuPosition == 0) {
+      // Start
+      if (CHARGER.is_charge_enabled()) {
+        CHARGER.disable_charger();
       } else {
-        if (menuPosition == 0) {
-          // Start
-          if (CHARGER.is_charge_enabled()) {
-            CHARGER.disable_charger();
-          } else {
-            CHARGER.enable_charger();
-          }
-        } else if (menuPosition == 1) {
-          // OTG
-          if (CHARGER.is_otg_enabled()) {
-            CHARGER.disable_otg();
-            leds[1] = CRGB::Black;
-          } else {
-            CHARGER.enable_otg();
-            leds[1] = CRGB::Blue;
-          }
-          //FastLED.show();
-        } else if (menuPosition == 2) {
-          // Menu
-          menuMode = 1;
-          menuPosition = 0;
-          displaySetupMenu();
-        }
+        CHARGER.enable_charger();
       }
-      break;
+    } else if (menuPosition == 1) {
+      // OTG
+      if (CHARGER.is_otg_enabled()) {
+        CHARGER.disable_otg();
+        leds[1] = CRGB::Black;
+      } else {
+        CHARGER.enable_otg();
+        leds[1] = CRGB::Blue;
+      }
+      //FastLED.show();
+    } else if (menuPosition == 2) {
+      // Menu
+      menuMode = 1;
+      menuPosition = 0;
+      displaySetupMenu();
+    }
   }
 }
 
@@ -528,6 +542,21 @@ void chargeLED() {
   }
 }
 
+void saveEEPROM(byte address, byte value) {
+  EEPROM.update(address, value);
+  leds[1] = CRGB::White;
+  FastLED.show();
+  delay(250);
+  leds[1] = CRGB::Black;
+  FastLED.show();
+}
+
+byte readEEPROM(byte address) {
+  byte val;
+  val = EEPROM.read(address);
+  return val;
+}
+
 void setupDisplay() {
   leds[0] = CRGB::Red;
   leds[1] = CRGB::Red;
@@ -549,7 +578,7 @@ void setupDisplay() {
   OLED.print(".");
   OLED.println(verLow);
   OLED.display();
-  delay(3000);
+  delay(2500);
   OLED.clearDisplay();
 
   leds[0] = CRGB::Black;
