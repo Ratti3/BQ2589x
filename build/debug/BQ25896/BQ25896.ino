@@ -15,17 +15,6 @@ of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Publ
 You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <Wire.h>
-#include <EEPROM.h>            // v2.0    | https://github.com/PaulStoffregen/EEPROM
-#include <BQ2589x.h>           // v1.0    | https://github.com/Ratti3/BQ2589x
-#include <FastLED.h>           // v3.5.0  | https://github.com/FastLED/FastLED
-#include <TimerOne.h>          // v1.1.1  | https://github.com/PaulStoffregen/TimerOne
-#include <LowPower.h>          // v2.2    | https://github.com/LowPowerLab/LowPower
-#include <AbleButtons.h>       // v0.3.0  | https://github.com/jsware/able-buttons
-#include <BasicEncoder.h>      // v1.1.4  | https://github.com/micromouseonline/BasicEncoder
-#include <Adafruit_GFX.h>      // v1.11.5 | https://github.com/adafruit/Adafruit-GFX-Library
-#include <Adafruit_SSD1306.h>  // v2.5.7  | https://github.com/adafruit/Adafruit_SSD1306
-
 /*  ____________
   -|            |-  A0 : TH_IC   [AI]         NTC for monitoring temperature close to the IC
   -|            |-  A2 : OTG     [DI]         Boost mode enable pin. The boost mode is activated when OTG_CONFIG = 1, OTG pin is high, and no input source is detected at VBUS.
@@ -40,6 +29,18 @@ You should have received a copy of the GNU General Public License along with Foo
   -|____________|- ~13 : D13_LED [DO]         LED_BUILTIN
   [DI] = Digital In, [DO] = Digital Out, [AI] = Analog In, [AO] = Analog Out
 */
+
+// Libraries
+#include <Wire.h>
+#include <EEPROM.h>            // v2.0    | https://github.com/PaulStoffregen/EEPROM
+#include <BQ2589x.h>           // v1.0    | https://github.com/Ratti3/BQ2589x
+#include <FastLED.h>           // v3.5.0  | https://github.com/FastLED/FastLED
+#include <TimerOne.h>          // v1.1.1  | https://github.com/PaulStoffregen/TimerOne
+#include <LowPower.h>          // v2.2    | https://github.com/LowPowerLab/LowPower
+#include <AbleButtons.h>       // v0.3.0  | https://github.com/jsware/able-buttons
+#include <BasicEncoder.h>      // v1.1.4  | https://github.com/micromouseonline/BasicEncoder
+#include <Adafruit_GFX.h>      // v1.11.5 | https://github.com/adafruit/Adafruit-GFX-Library
+#include <Adafruit_SSD1306.h>  // v2.5.7  | https://github.com/adafruit/Adafruit_SSD1306 (this needs to be modified to remove the splash screen)
 
 // EEPROM
 #define E_SAVE 0
@@ -77,24 +78,24 @@ using Button = AblePullupClickerButton;  // Button type
 Button SW1(PIN_ENCODER_SW);              // The button to check is on pin
 
 // FastLED
-#define PIN_WS2812 11  // WS2812B Data PIN
-#define NUM_LEDS 2     // Number of WS2812B LEDs
-#define LED_BRIGHTNESS 5
-CRGB leds[NUM_LEDS];
-bool stateLED0 = 0;
+#define PIN_WS2812 11     // WS2812B Data PIN
+#define NUM_LEDS 2        // Number of WS2812B LEDs
+#define LED_BRIGHTNESS 5  // Set LED brightness
+CRGB leds[NUM_LEDS];      // Set number of LEDs
+bool stateLED0 = 0;       // Track state of LEDs
 
 // OLED
-#define OLED_ADDRESS 0x3C  // OLED Address
-Adafruit_SSD1306 OLED(128, 64, &Wire, -1);
-unsigned long oledSLEEP = 0;
-byte oledRotation = 2;
+#define OLED_ADDRESS 0x3C                   // OLED Address
+Adafruit_SSD1306 OLED(128, 64, &Wire, -1);  // Adafruit OLED Class
+byte oledRotation = 2;                      // OLED default rotation setting
+unsigned long oledSLEEP = 0;                // Counter for turning OLED off
+unsigned long last_change = 0;              // Counter for turning OLED off
+unsigned long now = 0;                      // Counter for turning OLED off
 
 // Rotary Encoder, Timer & Menu
-#define PIN_ENCA A4  // Rotary Encoder PIN A
-#define PIN_ENCB A5  // Rotary Encoder PIN B
-BasicEncoder ENCODER(PIN_ENCA, PIN_ENCB, HIGH, 2);
-unsigned long last_change = 0;
-unsigned long now = 0;
+#define PIN_ENCA A4                                 // Rotary Encoder PIN A
+#define PIN_ENCB A5                                 // Rotary Encoder PIN B
+BasicEncoder ENCODER(PIN_ENCA, PIN_ENCB, HIGH, 2);  // BasicEncoder Class
 int encoderPrev = 0;
 bool menuMode = 0;
 int menuPosition = 0;
@@ -128,20 +129,26 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
+  // BQ25896 setup
   // INT PIN Setup
   pinMode(PIN_INT, INPUT);
-
   // OTG [LOW = Off, HIGH = Boost]
   pinMode(PIN_OTG, OUTPUT);
   digitalWrite(PIN_OTG, HIGH);
-
   // CE [LOW = Charge, HIGH = Idle]
   pinMode(PIN_CE, OUTPUT);
   digitalWrite(PIN_CE, LOW);
-
   // PSEL [LOW = Adapter, HIGH = USB]
   pinMode(PIN_PSEL, OUTPUT);
   digitalWrite(PIN_PSEL, LOW);
+  CHARGER.begin(&Wire, BQ2589x_ADDR);
+  CHARGER.disable_watchdog_timer();
+  CHARGER.adc_start(0);
+  CHARGER.disable_charger();
+  setChargeVoltage(3);
+  setChargeCurrent(5);
+  setOTGVoltage(1);
+  setOTGCurrent(4);
 
   // AbleButtons setup
   pinMode(PIN_ENCODER_SW, INPUT);
@@ -154,21 +161,24 @@ void setup() {
   // OLED setup
   OLED.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
   OLED.setTextSize(1);
+  OLED.setTextColor(SSD1306_WHITE);
 
   // Timer1 setup
   Timer1.initialize(1000);
   Timer1.attachInterrupt(timer_service);
   ENCODER.set_reverse();
 
-  // BQ25896 setup
-  CHARGER.begin(&Wire, BQ2589x_ADDR);
-  CHARGER.disable_watchdog_timer();
-  CHARGER.adc_start(0);
-  CHARGER.disable_charger();
-  setChargeVoltage(3);
-  setChargeCurrent(5);
-  setOTGVoltage(1);
-  setOTGCurrent(4);
+  OLED.clearDisplay();
+  OLED.setCursor(0, 0);
+  OLED.println(CHARGER.read_reg(0x01), BIN);
+  OLED.setCursor(0, 10);
+  OLED.println(CHARGER.read_reg(0x02), BIN);
+  OLED.setCursor(0, 20);
+  OLED.println(CHARGER.read_reg(0x03), BIN);
+  OLED.setCursor(0, 30);
+  OLED.println(CHARGER.read_reg(0x0F), BIN);
+  OLED.display();
+  delay(10000);
 
   // Display version on boot up
   setupDisplay();
@@ -612,7 +622,6 @@ void setupDisplay() {
 
   OLED.setRotation(oledRotation);
   OLED.clearDisplay();
-  OLED.setTextColor(SSD1306_WHITE);
   OLED.setCursor(43, 1);
   OLED.println("BQ25896");
   OLED.setCursor(20, 11);
