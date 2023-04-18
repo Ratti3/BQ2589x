@@ -68,16 +68,14 @@ Button SW1(PIN_ENCODER_SW);              // The button to check is on pin
 // FastLED
 #define PIN_WS2812 11  // WS2812B Data PIN
 #define NUM_LEDS 2     // Number of WS2812B LEDs
-#define LED_BRIGHTNESS 15
+#define LED_BRIGHTNESS 5
 CRGB leds[NUM_LEDS];
 bool stateLED0 = 0;
 
 // OLED
 #define OLED_ADDRESS 0x3C  // OLED Address
-#define OLED_BRIGHTNESS 0x01
-#define OLED_BRIGHTNESSREG 0x81
 Adafruit_SSD1306 OLED(128, 64, &Wire, -1);
-unsigned long oled_sleep = 0;
+unsigned long oledSLEEP = 0;
 byte oledRotation = 2;
 
 // Rotary Encoder, Timer & Menu
@@ -142,6 +140,7 @@ void setup() {
 
   // OLED setup
   OLED.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
+  OLED.setTextSize(1);
 
   // Timer1 setup
   Timer1.initialize(1000);
@@ -174,7 +173,7 @@ void loop() {
   if (ENCODER.get_change()) {
     OLED.dim(0);
     OLED.ssd1306_command(SSD1306_DISPLAYON);
-    oled_sleep = 0;
+    oledSLEEP = 0;
     tone(PIN_BUZZER, 6000, 100);
     menuOption(ENCODER.get_count());
   }
@@ -182,19 +181,23 @@ void loop() {
   now = millis();
 
   unsigned int aSleep = arraySleep[settingsSleep];
-  if (now - last_change > 1000 && oled_sleep <= aSleep) {
+  if (now - last_change > 1000 && oledSLEEP <= aSleep) {
     last_change = now;
-    oled_sleep++;
-    if (menuMode == 0) {
-      displayStatus();
-    } else {
+    oledSLEEP++;
+    if (menuMode) {
       displaySetupMenu();
+    } else {
+      displayStatus();
     }
-    chargeLED();
-  } else if (oled_sleep > aSleep && (CHARGER.is_charge_enabled() || CHARGER.is_otg_enabled())) {
+    showLEDs();
+  } else if (oledSLEEP > aSleep && (CHARGER.is_charge_enabled() || CHARGER.is_otg_enabled())) {
+    if (now - last_change > 1000) {
+      last_change = now;
+      showLEDs();
+    }
     OLED.dim(1);
     OLED.ssd1306_command(SSD1306_DISPLAYOFF);
-  } else if (oled_sleep > aSleep) {
+  } else if (oledSLEEP > aSleep) {
     OLED.dim(1);
     OLED.ssd1306_command(SSD1306_DISPLAYOFF);
 
@@ -209,7 +212,7 @@ void loop() {
 
     OLED.dim(0);
     OLED.ssd1306_command(SSD1306_DISPLAYON);
-    oled_sleep = 0;
+    oledSLEEP = 0;
   }
 }
 
@@ -224,15 +227,14 @@ void timer_service() {
 // Default Status Display
 void displayStatus() {
   OLED.clearDisplay();
-  OLED.setTextSize(1);
   OLED.setTextColor(SSD1306_WHITE);
   // VBUS input status
   OLED.setCursor(0, 0);
-  OLED.print("Input: ");
+  OLED.print("INPUT: ");
   OLED.println(CHARGER.get_vbus_type_text());
   // Charge status
   OLED.setCursor(0, 10);
-  OLED.print("Charge:");
+  OLED.print("CHARGE:");
   OLED.println(CHARGER.get_charging_status_text());
   // Line
   OLED.drawLine(1, 20, 126, 20, SSD1306_WHITE);
@@ -273,12 +275,9 @@ void displayStatus() {
   OLED.setCursor(61, 56);
   if (CHARGER.is_otg_enabled()) {
     OLED.print("STOP");
-    leds[1] = CRGB::Blue;
   } else {
     OLED.print("OTG");
-    leds[1] = CRGB::Black;
   }
-  FastLED.show();
   OLED.setCursor(97, 56);
   OLED.print("SETUP");
   switch (menuPosition) {
@@ -317,12 +316,13 @@ void menuOption(int encoderCurr) {
 
 // The event handler for the button.
 void buttonPressed() {
+  bool errorBeep = 0;
 
-  tone(PIN_BUZZER, 4000, 100);
   if (justWokeUp) {
     justWokeUp = 0;
     return;
   }
+
   if (menuMode) {
     switch (menuPosition) {
       case 0:
@@ -382,25 +382,34 @@ void buttonPressed() {
       // Start
       if (CHARGER.is_charge_enabled()) {
         CHARGER.disable_charger();
-      } else {
+      } else if (CHARGER.get_vbus_type() > 0 && CHARGER.get_vbus_type() < 7) {
         CHARGER.enable_charger();
+      } else {
+        errorBeep = 1;
       }
     } else if (menuPosition == 1) {
       // OTG
       if (CHARGER.is_otg_enabled()) {
         CHARGER.disable_otg();
-        leds[1] = CRGB::Black;
-      } else {
+      } else if (CHARGER.get_vbus_type() == 0) {
         CHARGER.enable_otg();
-        leds[1] = CRGB::Blue;
+      } else {
+        errorBeep = 1;
       }
-      //FastLED.show();
     } else if (menuPosition == 2) {
       // Menu
       menuMode = 1;
       menuPosition = 0;
       displaySetupMenu();
     }
+  }
+
+  if (errorBeep) {
+    tone(PIN_BUZZER, 4000, 100);
+    delay(100);
+    tone(PIN_BUZZER, 2000, 100);
+  } else {
+    tone(PIN_BUZZER, 4000, 100);
   }
 }
 
@@ -511,40 +520,48 @@ float ntcIC() {
   return steinhart;
 }
 
-void chargeLED() {
+void showLEDs() {
   stateLED0 = !stateLED0;
-  FastLED.show();
-  switch (CHARGER.get_charging_status()) {
-    case 0:
-      leds[0] = CRGB::Black;
-      break;
-    case 1:
-      if (stateLED0) {
+  if (CHARGER.is_otg_enabled()) {
+    if (stateLED0) {
+      leds[1] = CRGB::Black;
+    } else {
+      leds[1] = CRGB::Blue;
+    }
+  } else {
+    switch (CHARGER.get_charging_status()) {
+      case 0:
         leds[0] = CRGB::Black;
-      } else {
-        leds[0] = CRGB::DarkOrange;
-      }
-      break;
-    case 2:
-      if (stateLED0) {
-        leds[0] = CRGB::Black;
-      } else {
-        leds[0] = CRGB::DarkRed;
-      }
-      break;
-    case 3:
-      if (stateLED0) {
-        leds[0] = CRGB::Black;
-      } else {
-        leds[0] = CRGB::LimeGreen;
-      }
-      break;
+        break;
+      case 1:
+        if (stateLED0) {
+          leds[0] = CRGB::Black;
+        } else {
+          leds[0] = CRGB::Orange;
+        }
+        break;
+      case 2:
+        if (stateLED0) {
+          leds[0] = CRGB::Black;
+        } else {
+          leds[0] = CRGB::Red;
+        }
+        break;
+      case 3:
+        if (stateLED0) {
+          leds[0] = CRGB::Black;
+        } else {
+          leds[0] = CRGB::Green;
+        }
+        break;
+    }
   }
+  FastLED.show();
 }
 
 void saveEEPROM(byte address, byte value) {
   EEPROM.update(address, value);
-  leds[1] = CRGB::White;
+  leds[1] = CRGB::Yellow;
   FastLED.show();
   delay(250);
   leds[1] = CRGB::Black;
@@ -564,22 +581,20 @@ void setupDisplay() {
 
   OLED.setRotation(oledRotation);
   OLED.clearDisplay();
-  OLED.setTextSize(1);
   OLED.setTextColor(SSD1306_WHITE);
-  OLED.setCursor(43, 0);
+  OLED.setCursor(43, 1);
   OLED.println("BQ25896");
-  OLED.setCursor(20, 10);
+  OLED.setCursor(20, 11);
   OLED.println("Battery Charger");
-  OLED.setCursor(16, 33);
+  OLED.setCursor(16, 34);
   OLED.println("Ratti3 Tech Corp");
-  OLED.setCursor(50, 56);
+  OLED.setCursor(50, 55);
   OLED.print("v");
   OLED.print(verHigh);
   OLED.print(".");
   OLED.println(verLow);
   OLED.display();
-  delay(2500);
-  OLED.clearDisplay();
+  OLED.invertDisplay(1);
 
   leds[0] = CRGB::Black;
   leds[1] = CRGB::Black;
@@ -588,5 +603,9 @@ void setupDisplay() {
   tone(PIN_BUZZER, 3000, 200);
   delay(500);
   tone(PIN_BUZZER, 4000, 200);
-  delay(500);
+
+  delay(2000);
+
+  OLED.invertDisplay(0);
+  OLED.clearDisplay();
 }

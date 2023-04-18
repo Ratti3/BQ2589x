@@ -6,14 +6,12 @@
  *   @returns true on success, false otherwise
  */
 
-
 /*!
  *   @brief  Initialise sensor with given parameters / settings
  *   @param addr the I2C address the device can be found on
  *   @param theWire the I2C object to use
  *   @returns true on success, false otherwise
  */
-
 
 /*!
  *   @brief  Initialise sensor with given parameters / settings
@@ -24,7 +22,7 @@
 int bq2589x::begin(TwoWire *theWire, uint8_t addr)
 {
     _wire = theWire;
-    _i2caddr = addr;//BQ2589x_ADDR;
+    _i2caddr = addr;
     return reset_chip();
 }
 
@@ -42,12 +40,10 @@ int bq2589x::read_byte(uint8_t *data, uint8_t reg)
 
     if (rtn == I2C_OK)
     {
-        //Serial.println("BQ25895 Write OK");
         return BQ2589X_OK; //TI lib uses 1 as failed
     }
     else
     {
-        //Serial.println("BQ25895 Write Err");
         return BQ2589X_ERR; //TI lib uses 1 as failed
     }
 }
@@ -58,19 +54,14 @@ int bq2589x::write_byte(uint8_t reg, uint8_t data)
     _wire->beginTransmission((uint8_t)_i2caddr);
     _wire->write((uint8_t)reg);
     _wire->write((uint8_t)data);
-    //Serial.printf("Write address 0x%02x  , data 0x%02x\r\n", reg, data);
-    //Serial.println(reg ,HEX);
-    //Serial.println(data, BIN);
     rtn = _wire->endTransmission();
 
     if (rtn == I2C_OK)
     {
-        //Serial.println("BQ25895 Write OK");
         return BQ2589X_OK; //TI lib uses 1 as failed
     }
     else
     {
-        //Serial.println("BQ25895 Write Err");
         return BQ2589X_ERR; //TI lib uses 1 as failed
     }
 }
@@ -141,14 +132,12 @@ String bq2589x::get_vbus_type_text()
 int bq2589x::enable_otg()
 {
     uint8_t val = BQ2589X_OTG_ENABLE << BQ2589X_OTG_CONFIG_SHIFT;
-
     return update_bits(BQ2589X_REG_03, BQ2589X_OTG_CONFIG_MASK, val);
 }
 
 int bq2589x::disable_otg()
 {
     uint8_t val = BQ2589X_OTG_DISABLE << BQ2589X_OTG_CONFIG_SHIFT;
-
     return update_bits(BQ2589X_REG_03, BQ2589X_OTG_CONFIG_MASK, val);
 }
 
@@ -173,7 +162,6 @@ int bq2589x::set_otg_voltage(uint16_t volt)
         volt = BQ2589X_BOOSTV_BASE + (BQ2589X_BOOSTV_MASK >> BQ2589X_BOOSTV_SHIFT) * BQ2589X_BOOSTV_LSB;
 
     val = ((volt - BQ2589X_BOOSTV_BASE) / BQ2589X_BOOSTV_LSB) << BQ2589X_BOOSTV_SHIFT;
-
     return update_bits(BQ2589X_REG_0A, BQ2589X_BOOSTV_MASK, val);
 }
 
@@ -262,14 +250,12 @@ int bq2589x::get_otg_current()
 int bq2589x::enable_charger()
 {
     uint8_t val = BQ2589X_CHG_ENABLE << BQ2589X_CHG_CONFIG_SHIFT;
-
     return update_bits(BQ2589X_REG_03, BQ2589X_CHG_CONFIG_MASK, val);
 }
 
 int bq2589x::disable_charger()
 {
     uint8_t val = BQ2589X_CHG_DISABLE << BQ2589X_CHG_CONFIG_SHIFT;
-
     return update_bits(BQ2589X_REG_03, BQ2589X_CHG_CONFIG_MASK, val);
 }
 
@@ -287,14 +273,12 @@ bool bq2589x::is_charge_enabled()
 int bq2589x::enable_bat_loaden()
 {
     uint8_t val = BQ2589X_BAT_LOADEN_ENABLE << BQ2589X_BAT_LOADEN_SHIFT;
-
     return update_bits(BQ2589X_REG_03, BQ2589X_BAT_LOADEN_MASK, val);
 }
 
 int bq2589x::disable_bat_loaden()
 {
     uint8_t val = BQ2589X_BAT_LOADEN_DISABLE << BQ2589X_BAT_LOADEN_SHIFT;
-
     return update_bits(BQ2589X_REG_03, BQ2589X_BAT_LOADEN_MASK, val);
 }
 
@@ -330,6 +314,7 @@ int bq2589x::adc_read_battery_volt()
     int volt;
     int ret;
     ret = read_byte(&val, BQ2589X_REG_0E);
+
     if (ret)
     {
         return ret;
@@ -347,6 +332,7 @@ int bq2589x::adc_read_sys_volt()
     int volt;
     int ret;
     ret = read_byte(&val, BQ2589X_REG_0F);
+
     if (ret)
     {
         return ret;
@@ -364,6 +350,7 @@ int bq2589x::adc_read_vbus_volt()
     int volt;
     int ret;
     ret = read_byte(&val, BQ2589X_REG_11);
+
     if (ret)
     {
         return ret;
@@ -371,7 +358,6 @@ int bq2589x::adc_read_vbus_volt()
     else
     {
         volt = BQ2589X_VBUSV_BASE + ((val & BQ2589X_VBUSV_MASK) >> BQ2589X_VBUSV_SHIFT) * BQ2589X_VBUSV_LSB;
-
         return volt;
     }
 }
@@ -382,6 +368,7 @@ int bq2589x::adc_read_temperature()
     int temp;
     int ret;
     ret = read_byte(&val, BQ2589X_REG_10);
+
     if (ret)
     {
         return ret;
@@ -399,6 +386,7 @@ int bq2589x::adc_read_charge_current()
     int volt;
     int ret;
     ret = read_byte(&val, BQ2589X_REG_12);
+
     if (ret)
     {
         return ret;
@@ -440,7 +428,6 @@ int bq2589x::set_term_current(int curr)
     uint8_t iterm;
 
     iterm = (curr - BQ2589X_ITERM_BASE) / BQ2589X_ITERM_LSB;
-
     return update_bits(BQ2589X_REG_05, BQ2589X_ITERM_MASK, iterm << BQ2589X_ITERM_SHIFT);
 }
 
@@ -449,7 +436,6 @@ int bq2589x::set_prechg_current(int curr)
     uint8_t iprechg;
 
     iprechg = (curr - BQ2589X_IPRECHG_BASE) / BQ2589X_IPRECHG_LSB;
-
     return update_bits(BQ2589X_REG_05, BQ2589X_IPRECHG_MASK, iprechg << BQ2589X_IPRECHG_SHIFT);
 }
 
@@ -482,6 +468,7 @@ int bq2589x::get_charge_voltage()
 int bq2589x::set_input_volt_limit(int volt)
 {
     uint8_t val;
+
     val = (volt - BQ2589X_VINDPM_BASE) / BQ2589X_VINDPM_LSB;
     return update_bits(BQ2589X_REG_0D, BQ2589X_VINDPM_MASK, val << BQ2589X_VINDPM_SHIFT);
 }
@@ -605,14 +592,12 @@ int bq2589x::set_watchdog_timer(uint8_t timeout)
 int bq2589x::disable_watchdog_timer()
 {
     uint8_t val = BQ2589X_WDT_DISABLE << BQ2589X_WDT_SHIFT;
-
     return update_bits(BQ2589X_REG_07, BQ2589X_WDT_MASK, val);
 }
 
 int bq2589x::reset_watchdog_timer()
 {
     uint8_t val = BQ2589X_WDT_RESET << BQ2589X_WDT_RESET_SHIFT;
-
     return update_bits(BQ2589X_REG_03, BQ2589X_WDT_RESET_MASK, val);
 }
 
@@ -632,33 +617,32 @@ int bq2589x::force_dpdm()
 int bq2589x::reset_chip()
 {
     int ret;
-    uint8_t val = BQ2589X_RESET << BQ2589X_RESET_SHIFT;
 
+    uint8_t val = BQ2589X_RESET << BQ2589X_RESET_SHIFT;
     ret = update_bits(BQ2589X_REG_14, BQ2589X_RESET_MASK, val);
+
     return ret;
 }
 
 int bq2589x::enter_ship_mode()
 {
     int ret;
-    uint8_t val = BQ2589X_BATFET_OFF << BQ2589X_BATFET_DIS_SHIFT;
 
+    uint8_t val = BQ2589X_BATFET_OFF << BQ2589X_BATFET_DIS_SHIFT;
     ret = update_bits(BQ2589X_REG_09, BQ2589X_BATFET_DIS_MASK, val);
+
     return ret;
 }
 
 int bq2589x::enter_hiz_mode()
 {
     uint8_t val = BQ2589X_HIZ_ENABLE << BQ2589X_ENHIZ_SHIFT;
-
     return update_bits(BQ2589X_REG_00, BQ2589X_ENHIZ_MASK, val);
 }
 
 int bq2589x::exit_hiz_mode()
 {
-
     uint8_t val = BQ2589X_HIZ_DISABLE << BQ2589X_ENHIZ_SHIFT;
-
     return update_bits(BQ2589X_REG_00, BQ2589X_ENHIZ_MASK, val);
 }
 
@@ -696,7 +680,6 @@ int bq2589x::pumpx_increase_volt()
     int ret;
 
     val = BQ2589X_PUMPX_UP << BQ2589X_PUMPX_UP_SHIFT;
-
     ret = update_bits(BQ2589X_REG_09, BQ2589X_PUMPX_UP_MASK, val);
 
     return ret;
@@ -723,7 +706,6 @@ int bq2589x::pumpx_decrease_volt()
     int ret;
 
     val = BQ2589X_PUMPX_DOWN << BQ2589X_PUMPX_DOWN_SHIFT;
-
     ret = update_bits(BQ2589X_REG_09, BQ2589X_PUMPX_DOWN_MASK, val);
 
     return ret;
@@ -750,7 +732,6 @@ int bq2589x::force_ico()
     int ret;
 
     val = BQ2589X_FORCE_ICO << BQ2589X_FORCE_ICO_SHIFT;
-
     ret = update_bits(BQ2589X_REG_09, BQ2589X_FORCE_ICO_MASK, val);
 
     return ret;
