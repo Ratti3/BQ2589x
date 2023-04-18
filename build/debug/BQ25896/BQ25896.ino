@@ -37,12 +37,21 @@ You should have received a copy of the GNU General Public License along with Foo
   -|            |-  ~9 : INT     [DO][PCINT5] Open-drain Interrupt Output. The INT pin sends active low, 256-μs pulse to host to report charger device status and fault.
   -|            |- ~10 : PSEL    [DI]         Power source selection input. High indicates a USB host source and Low indicates an adapter source.
   -|            |- ~11 : WS2812  [DO]         WS2812B LEDs
-  -|____________|- ~13 : D13_LED [DO]         Arduino LED_BUILTIN
+  -|____________|- ~13 : D13_LED [DO]         LED_BUILTIN
   [DI] = Digital In, [DO] = Digital Out, [AI] = Analog In, [AO] = Analog Out
 */
 
-byte verHigh = 1;
-byte verLow = 0;
+// EEPROM
+#define E_SAVE 0
+#define E_VCHG 10
+#define E_ICHG 20
+#define E_VOTG 30
+#define E_IOTG 40
+#define E_ROTATE 50
+#define E_SLEEP 60
+#define E_LED_BR 70
+#define E_OLED_BR 80
+bool settingsSaved = 0;
 
 // BQ25896
 #define PIN_OTG A2         // BQ25896 OTG Digital Input
@@ -51,14 +60,16 @@ byte verLow = 0;
 #define PIN_PSEL 10        // BQ25896 PSEL Digital Input
 #define BQ2589x_ADDR 0x6B  // BQ25896 I2C Address
 bq2589x CHARGER;
-int arrayVCHG[5] = { 3840, 4000, 4096, 4192, 4208 };       // Charge volage values
-byte menuPositionVCHG = 3;                                 // Set default charge voltage to 4.92V
-int arrayICHG[6] = { 512, 1024, 1536, 2048, 2560, 3072 };  // Charge current values
-byte menuPositionICHG = 5;                                 // Set default charge current to 3A
-int arrayVOTG[3] = { 4998, 5062, 5126 };                   // Boost voltage values
-byte menuPositionVOTG = 1;                                 // Set default boost voltage to 5.062V
-int arrayIOTG[5] = { 500, 750, 1200, 1650, 2150 };         // Boost current values
-byte menuPositionIOTG = 4;                                 // Set default boost current to 2.15A
+int arrVCHG[5] = { 3840, 4000, 4096, 4192, 4208 };       // Charge volage values
+byte arrPositionVCHG = 3;                                // Set default charge voltage to 4.92V
+int arrICHG[6] = { 512, 1024, 1536, 2048, 2560, 3072 };  // Charge current values
+byte arrPositionICHG = 5;                                // Set default charge current to 3A
+int arrVOTG[3] = { 4998, 5062, 5126 };                   // Boost voltage values
+byte arrPositionVOTG = 1;                                // Set default boost voltage to 5.062V
+int arrIOTG[5] = { 500, 750, 1200, 1650, 2150 };         // Boost current values
+byte arrPositionIOTG = 4;                                // Set default boost current to 2.15A
+byte verHigh = 1;                                        // Version number major
+byte verLow = 0;                                         // Version number minor
 
 // AbleButtons
 #define PIN_ENCODER_SW 7                 // SW1 PIN
@@ -105,17 +116,19 @@ int samples[NUMSAMPLES];
 
 void setup() {
 
+  // I2C
   Wire.begin();
-  Serial.begin(9600);
 
+  // Serial
+  // Serial.begin(9600);
   // Wait for Serial
-  delay(2000);
+  // delay(2000);
 
   // D13 LED
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
 
-  // INT
+  // INT PIN Setup
   pinMode(PIN_INT, INPUT);
 
   // OTG [LOW = Off, HIGH = Boost]
@@ -218,6 +231,7 @@ void loop() {
 
 void wakeUp() {
   justWokeUp = 1;
+  tone(PIN_BUZZER, 3000, 300);
 }
 
 void timer_service() {
@@ -280,17 +294,25 @@ void displayStatus() {
   }
   OLED.setCursor(97, 56);
   OLED.print("SETUP");
+
+  byte X = 0;
+  byte Y = 0;
+
   switch (menuPosition) {
     case 0:
-      OLED.setCursor(0, 56);
+      X = 0;
+      Y = 56;
       break;
     case 1:
-      OLED.setCursor(54, 56);
+      X = 54;
+      Y = 56;
       break;
     case 2:
-      OLED.setCursor(90, 56);
+      X = 90;
+      Y = 56;
       break;
   }
+  OLED.setCursor(X, Y);
   OLED.print(">");
   OLED.display();
 }
@@ -327,27 +349,27 @@ void buttonPressed() {
     switch (menuPosition) {
       case 0:
         // Set Charge Voltage
-        ++menuPositionVCHG;
-        if (menuPositionVCHG > 4) menuPositionVCHG = 0;
-        setChargeVoltage(menuPositionVCHG);
+        ++arrPositionVCHG;
+        if (arrPositionVCHG > 4) arrPositionVCHG = 0;
+        setChargeVoltage(arrPositionVCHG);
         break;
       case 1:
         // Set Charge Current
-        ++menuPositionICHG;
-        if (menuPositionICHG > 5) menuPositionICHG = 0;
-        setChargeCurrent(menuPositionICHG);
+        ++arrPositionICHG;
+        if (arrPositionICHG > 5) arrPositionICHG = 0;
+        setChargeCurrent(arrPositionICHG);
         break;
       case 2:
         // Set Boost Voltage
-        ++menuPositionVOTG;
-        if (menuPositionVOTG > 2) menuPositionVOTG = 0;
-        setOTGVoltage(menuPositionVOTG);
+        ++arrPositionVOTG;
+        if (arrPositionVOTG > 2) arrPositionVOTG = 0;
+        setOTGVoltage(arrPositionVOTG);
         break;
       case 3:
         // Set Boost Current
-        ++menuPositionIOTG;
-        if (menuPositionIOTG > 4) menuPositionIOTG = 0;
-        setOTGCurrent(menuPositionIOTG);
+        ++arrPositionIOTG;
+        if (arrPositionIOTG > 4) arrPositionIOTG = 0;
+        setOTGCurrent(arrPositionIOTG);
         break;
       case 4:
         if (oledRotation == 2) {
@@ -364,17 +386,15 @@ void buttonPressed() {
         break;
       case 6:
         // Exit
-        saveEEPROM(10, menuPositionVCHG);
-        saveEEPROM(20, menuPositionICHG);
-        saveEEPROM(30, menuPositionVOTG);
-        saveEEPROM(40, menuPositionIOTG);
+        saveEEPROM(10, arrPositionVCHG);
+        saveEEPROM(20, arrPositionICHG);
+        saveEEPROM(30, arrPositionVOTG);
+        saveEEPROM(40, arrPositionIOTG);
         saveEEPROM(50, oledRotation);
         saveEEPROM(60, settingsSleep);
         menuMode = 0;
         menuPosition = 0;
         displayStatus();
-        Serial.println(readEEPROM(10));
-        Serial.println(readEEPROM(20));
         break;
     }
   } else {
@@ -445,47 +465,58 @@ void displaySetupMenu() {
   // Options
   OLED.setCursor(53, 57);
   OLED.print("EXIT");
+
+  byte X = 0;
+  byte Y = 0;
   switch (menuPosition) {
     case 0:
-      OLED.setCursor(29, 12);
+      X = 29;
+      Y = 12;
       break;
     case 1:
-      OLED.setCursor(77, 12);
+      X = 77;
+      Y = 12;
       break;
     case 2:
-      OLED.setCursor(29, 22);
+      X = 29;
+      Y = 22;
       break;
     case 3:
-      OLED.setCursor(77, 22);
+      X = 77;
+      Y = 22;
       break;
     case 4:
-      OLED.setCursor(0, 32);
+      X = 0;
+      Y = 32;
       break;
     case 5:
-      OLED.setCursor(0, 42);
+      X = 0;
+      Y = 42;
       break;
     case 6:
-      OLED.setCursor(46, 57);
+      X = 46;
+      Y = 57;
       break;
   }
+  OLED.setCursor(X, Y);
   OLED.print(">");
   OLED.display();
 }
 
 void setChargeVoltage(int volt) {
-  CHARGER.set_charge_voltage(arrayVCHG[volt]);
+  CHARGER.set_charge_voltage(arrVCHG[volt]);
 }
 
 void setChargeCurrent(int curr) {
-  CHARGER.set_charge_current(arrayICHG[curr]);
+  CHARGER.set_charge_current(arrICHG[curr]);
 }
 
 void setOTGVoltage(int volt) {
-  CHARGER.set_otg_voltage(arrayVOTG[volt]);
+  CHARGER.set_otg_voltage(arrVOTG[volt]);
 }
 
 void setOTGCurrent(int curr) {
-  CHARGER.set_otg_current(arrayIOTG[curr]);
+  CHARGER.set_otg_current(arrIOTG[curr]);
 }
 
 float ntcIC() {
