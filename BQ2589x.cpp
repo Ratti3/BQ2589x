@@ -221,30 +221,22 @@ int bq2589x::get_otg_current()
     else
     {
         curr = (val & BQ2589X_BOOST_LIM_MASK) >> BQ2589X_BOOST_LIM_SHIFT;
-        switch (curr) {
-        case 0:
-            return BQ2589X_BOOST_LIM_500MA_VALUE;
-            break;
-        case 1:
-            return BQ2589X_BOOST_LIM_750MA_VALUE;
-            break;
-        case 2:
-            return BQ2589X_BOOST_LIM_1200MA_VALUE;
-            break;
-        case 3:
-            return BQ2589X_BOOST_LIM_1400MA_VALUE;
-            break;
-        case 4:
-            return BQ2589X_BOOST_LIM_1650MA_VALUE;
-            break;
-        case 5:
-            return BQ2589X_BOOST_LIM_1875MA_VALUE;
-            break;
-        case 6:
-            return BQ2589X_BOOST_LIM_2150MA_VALUE;
-            break;
-        }
+        if (curr == 0)
+            ret = BQ2589X_BOOST_LIM_500MA_VALUE;
+        else if (curr == 1)
+            ret = BQ2589X_BOOST_LIM_750MA_VALUE;
+        else if (curr == 2)
+            ret = BQ2589X_BOOST_LIM_1200MA_VALUE;
+        else if (curr == 3)
+            ret = BQ2589X_BOOST_LIM_1400MA_VALUE;
+        else if (curr == 4)
+            ret = BQ2589X_BOOST_LIM_1650MA_VALUE;
+        else if (curr == 5)
+            ret = BQ2589X_BOOST_LIM_1875MA_VALUE;
+        else if (curr == 6)
+            ret = BQ2589X_BOOST_LIM_2150MA_VALUE;
     }
+    return ret;
 }
 
 int bq2589x::enable_charger()
@@ -839,19 +831,6 @@ bool bq2589x::is_charge_done()
     val >>= BQ2589X_CHRG_STAT_SHIFT;
 
     return (bool)(val == BQ2589X_CHRG_STAT_CHGDONE);
-}
-
-int bq2589x::init_device()
-{
-    int ret;
-
-    /*common initialization*/
-
-    disable_watchdog_timer();
-
-    ret = set_charge_current(2560); //2.5A
-
-    return ret;
 }
 
 int bq2589x::detect_device(bq2589x_part_no *part_no, int *revision)

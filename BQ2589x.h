@@ -105,7 +105,6 @@ public:
     int enable_ico(bool enable);
     int read_idpm_limit();
     bool is_charge_done();
-    int init_device();
     int detect_device(bq2589x_part_no *part_no, int *revision);
     int enable_max_charge(bool enable);
     int read_reg(byte reg);

@@ -116,18 +116,30 @@ int samples[NUMSAMPLES];
 #define PIN_BUZZER 5  // Buzzer PIN
 
 void setup() {
-
   // I2C
   Wire.begin();
-
-  // Serial
-  // Serial.begin(9600);
-  // Wait for Serial
-  // delay(2000);
 
   // D13 LED
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
+
+  // AbleButtons setup
+  pinMode(PIN_ENCODER_SW, INPUT);
+  SW1.begin();
+
+  // FastLED setup
+  FastLED.addLeds<WS2812, PIN_WS2812, GRB>(leds, NUM_LEDS);
+  FastLED.setBrightness(LED_BRIGHTNESS);
+
+  // OLED setup
+  OLED.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
+  OLED.setTextSize(1);
+  OLED.setTextColor(SSD1306_WHITE);
+
+  // Timer1 setup
+  Timer1.initialize(1000);
+  Timer1.attachInterrupt(timer_service);
+  ENCODER.set_reverse();
 
   // BQ25896 setup
   // INT PIN Setup
@@ -149,36 +161,6 @@ void setup() {
   setChargeCurrent(5);
   setOTGVoltage(1);
   setOTGCurrent(4);
-
-  // AbleButtons setup
-  pinMode(PIN_ENCODER_SW, INPUT);
-  SW1.begin();
-
-  // FastLED setup
-  FastLED.addLeds<WS2812, PIN_WS2812, GRB>(leds, NUM_LEDS);
-  FastLED.setBrightness(LED_BRIGHTNESS);
-
-  // OLED setup
-  OLED.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
-  OLED.setTextSize(1);
-  OLED.setTextColor(SSD1306_WHITE);
-
-  // Timer1 setup
-  Timer1.initialize(1000);
-  Timer1.attachInterrupt(timer_service);
-  ENCODER.set_reverse();
-
-  OLED.clearDisplay();
-  OLED.setCursor(0, 0);
-  OLED.println(CHARGER.read_reg(0x01), BIN);
-  OLED.setCursor(0, 10);
-  OLED.println(CHARGER.read_reg(0x02), BIN);
-  OLED.setCursor(0, 20);
-  OLED.println(CHARGER.read_reg(0x03), BIN);
-  OLED.setCursor(0, 30);
-  OLED.println(CHARGER.read_reg(0x0F), BIN);
-  OLED.display();
-  delay(10000);
 
   // Display version on boot up
   setupDisplay();
