@@ -6,13 +6,13 @@
   _|    _|    _|_|_|      _|_|    _|_|  _|  _|_|_|     https://www.hackster.io/Ratti3
 .                                                      https://github.com/Ratti3
 
-This file is part of Foobar.
+This file is part of https://github.com/Ratti3/BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED
 
-Foobar is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as 
-published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-Foobar is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty 
-of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with Foobar. If not, see <https://www.gnu.org/licenses/>.
+BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED is free software: you can redistribute it and/or modify it under the terms of the 
+GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED. If not, see <https://www.gnu.org/licenses/>.
 */
 
 /*  ____________

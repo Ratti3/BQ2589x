@@ -1,3 +1,22 @@
+/*                                                     https://oshwlab.com/ratti3
+  _|_|_|                _|      _|      _|  _|_|_|     https://youtube.com/@Ratti3
+  _|    _|    _|_|_|  _|_|_|_|_|_|_|_|            _|   https://projecthub.arduino.cc/Ratti3
+  _|_|_|    _|    _|    _|      _|      _|    _|_|     https://ratti3.blogspot.com
+  _|    _|  _|    _|    _|      _|      _|        _|   https://hackaday.io/Ratti3
+  _|    _|    _|_|_|      _|_|    _|_|  _|  _|_|_|     https://www.hackster.io/Ratti3
+.                                                      https://github.com/Ratti3
+
+Code forked from https://github.com/spencer1979/bq2589x
+
+This file is part of https://github.com/Ratti3/BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED
+
+BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED is free software: you can redistribute it and/or modify it under the terms of the
+GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED. If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #ifndef _BQ2589X_H
 #define _BQ2589X_H
 
