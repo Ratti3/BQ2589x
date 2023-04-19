@@ -1,12 +1,12 @@
 #######################################
-# Syntax Coloring Map For bq2589x
+# Syntax Coloring Map For BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED
 #######################################
 
 #######################################
 # Datatypes (KEYWORD1)
 #######################################
 
-bq2589x	KEYWORD1
+BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
