@@ -52,7 +52,6 @@ You should have received a copy of the GNU General Public License along with BQ2
 #define E_SLEEP 60
 #define E_LED_BR 70
 #define E_OLED_BR 80
-bool settingsSaved = 0;
 
 // BQ25896
 #define PIN_OTG A2         // BQ25896 OTG Digital Input
@@ -116,6 +115,9 @@ int samples[NUMSAMPLES];
 #define PIN_BUZZER 5  // Buzzer PIN
 
 void setup() {
+  // Wait for things to warm up
+  delay(1000);
+
   // I2C
   Wire.begin();
 
@@ -157,10 +159,9 @@ void setup() {
   CHARGER.disable_watchdog_timer();
   CHARGER.adc_start(0);
   CHARGER.disable_charger();
-  setChargeVoltage(3);
-  setChargeCurrent(5);
-  setOTGVoltage(1);
-  setOTGCurrent(4);
+
+  // Load (save defaults) EEPROM values
+  loadEEPROM();
 
   // Display version on boot up
   setupDisplay();
@@ -242,7 +243,6 @@ void displayStatus() {
   OLED.setCursor(0, 10);
   OLED.print("CHARGE:");
   OLED.println(CHARGER.get_charging_status_text());
-  // Line
   OLED.drawLine(1, 20, 126, 20, SSD1306_WHITE);
   // VBUS Voltage
   OLED.setCursor(0, 23);
@@ -330,40 +330,39 @@ void menuOption(int encoderCurr) {
 
 // The event handler for the button.
 void buttonPressed() {
+  // Set error state
   bool errorBeep = 0;
 
+  // Reset the wake state
   if (justWokeUp) {
     justWokeUp = 0;
     return;
   }
 
+  // Setup Menu
   if (menuMode) {
     switch (menuPosition) {
-      case 0:
-        // Set Charge Voltage
+      case 0:  // Set Charge Voltage
         ++arrPositionVCHG;
         if (arrPositionVCHG > 4) arrPositionVCHG = 0;
         setChargeVoltage(arrPositionVCHG);
         break;
-      case 1:
-        // Set Charge Current
+      case 1:  // Set Charge Current
         ++arrPositionICHG;
         if (arrPositionICHG > 5) arrPositionICHG = 0;
         setChargeCurrent(arrPositionICHG);
         break;
-      case 2:
-        // Set Boost Voltage
+      case 2:  // Set Boost Voltage
         ++arrPositionVOTG;
         if (arrPositionVOTG > 2) arrPositionVOTG = 0;
         setOTGVoltage(arrPositionVOTG);
         break;
-      case 3:
-        // Set Boost Current
+      case 3:  // Set Boost Current
         ++arrPositionIOTG;
         if (arrPositionIOTG > 4) arrPositionIOTG = 0;
         setOTGCurrent(arrPositionIOTG);
         break;
-      case 4:
+      case 4:  // Set OLED Rotation
         if (oledRotation == 2) {
           oledRotation = 0;
         } else {
@@ -371,22 +370,19 @@ void buttonPressed() {
         }
         OLED.setRotation(oledRotation);
         break;
-      case 5:
+      case 5:  // Set Sleep Timer
         ++settingsSleep;
         if (settingsSleep > 2) settingsSleep = 0;
-        ////arraySleep[settingsSleep];
         break;
-      case 6:
-        // Exit
-        saveEEPROM(10, arrPositionVCHG);
-        saveEEPROM(20, arrPositionICHG);
-        saveEEPROM(30, arrPositionVOTG);
-        saveEEPROM(40, arrPositionIOTG);
-        saveEEPROM(50, oledRotation);
-        saveEEPROM(60, settingsSleep);
+      case 6:  // Exit Setup Menu and save settings to EEPROM
+        saveEEPROM(E_VCHG, arrPositionVCHG);
+        saveEEPROM(E_ICHG, arrPositionICHG);
+        saveEEPROM(E_VOTG, arrPositionVOTG);
+        saveEEPROM(E_IOTG, arrPositionIOTG);
+        saveEEPROM(E_ROTATE, oledRotation);
+        saveEEPROM(E_SLEEP, settingsSleep);
         menuMode = 0;
         menuPosition = 0;
-        displayStatus();
         break;
     }
   } else {
@@ -595,6 +591,30 @@ byte readEEPROM(byte address) {
   byte val;
   val = EEPROM.read(address);
   return val;
+}
+
+void loadEEPROM() {
+  if (readEEPROM(E_SAVE) == 1) {
+    arrPositionVCHG = readEEPROM(E_VCHG);
+    arrPositionICHG = readEEPROM(E_ICHG);
+    arrPositionVOTG = readEEPROM(E_VOTG);
+    arrPositionIOTG = readEEPROM(E_IOTG);
+    oledRotation = readEEPROM(E_ROTATE);
+    settingsSleep = readEEPROM(E_SLEEP);
+  } else {
+    saveEEPROM(E_VCHG, arrPositionVCHG);
+    saveEEPROM(E_ICHG, arrPositionICHG);
+    saveEEPROM(E_VOTG, arrPositionVOTG);
+    saveEEPROM(E_IOTG, arrPositionIOTG);
+    saveEEPROM(E_ROTATE, oledRotation);
+    saveEEPROM(E_SLEEP, settingsSleep);
+    saveEEPROM(E_SAVE, 1);
+  }
+
+  setChargeVoltage(arrPositionVCHG);
+  setChargeCurrent(arrPositionICHG);
+  setOTGVoltage(arrPositionVOTG);
+  setOTGCurrent(arrPositionIOTG);
 }
 
 void setupDisplay() {

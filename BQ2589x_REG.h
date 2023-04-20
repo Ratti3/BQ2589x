@@ -576,7 +576,7 @@ Bit	Field			Type	Reset				Description
 
 #define BQ2589X_VBUS_STAT_MASK    0xE0            // BIT 5-7 11100000
 #define BQ2589X_VBUS_STAT_SHIFT   5
-#define BQ2589X_VBUS_STAT_00      "No USB Input"
+#define BQ2589X_VBUS_STAT_00      "Battery"
 #define BQ2589X_VBUS_STAT_01      "USB Host SDP"
 #define BQ2589X_VBUS_STAT_02      "Adapter 3.25A"
 #define BQ2589X_VBUS_STAT_03      "USB CDP 3.25A"
