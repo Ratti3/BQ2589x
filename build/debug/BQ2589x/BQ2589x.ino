@@ -42,17 +42,6 @@ You should have received a copy of the GNU General Public License along with BQ2
 #include <Adafruit_GFX.h>      // v1.11.5 | https://github.com/adafruit/Adafruit-GFX-Library
 #include <Adafruit_SSD1306.h>  // v2.5.7  | https://github.com/adafruit/Adafruit_SSD1306 (this needs to be modified to remove the splash screen)
 
-// EEPROM
-#define E_SAVE 0
-#define E_VCHG 10
-#define E_ICHG 20
-#define E_VOTG 30
-#define E_IOTG 40
-#define E_ROTATE 50
-#define E_SLEEP 60
-#define E_LED_BR 70
-#define E_OLED_BR 80
-
 // BQ25896
 #define PIN_OTG A2         // BQ25896 OTG Digital Input
 #define PIN_CE A3          // BQ25896 CE Digital Input
@@ -60,6 +49,19 @@ You should have received a copy of the GNU General Public License along with BQ2
 #define PIN_PSEL 10        // BQ25896 PSEL Digital Input
 #define BQ2589x_ADDR 0x6B  // BQ25896 I2C Address
 bq2589x CHARGER;
+
+// EEPROM save location, saved as byte
+#define E_SAVE 0       // 0-1 - Settings saved state
+#define E_VCHG 10      // arrPositionVCHG
+#define E_ICHG 20      // arrPositionICHG
+#define E_VOTG 30      // arrPositionVOTG
+#define E_IOTG 40      // arrPositionIOTG
+#define E_ROTATE 50    // oledRotation
+#define E_SLEEP 60     // arraySleep
+#define E_LED_BR 70    //
+#define E_PWR_DOWN 80  //
+
+// Value ranges for settings
 int arrVCHG[5] = { 3840, 4000, 4096, 4192, 4208 };       // Charge volage values
 byte arrPositionVCHG = 3;                                // Set default charge voltage to 4.92V
 int arrICHG[6] = { 512, 1024, 1536, 2048, 2560, 3072 };  // Charge current values
@@ -68,8 +70,16 @@ int arrVOTG[3] = { 4998, 5062, 5126 };                   // Boost voltage values
 byte arrPositionVOTG = 1;                                // Set default boost voltage to 5.062V
 int arrIOTG[5] = { 500, 750, 1200, 1650, 2150 };         // Boost current values
 byte arrPositionIOTG = 4;                                // Set default boost current to 2.15A
-byte verHigh = 1;                                        // Version number major
-byte verLow = 0;                                         // Version number minor
+byte oledRotation = 2;                                   // OLED default rotation setting
+int arraySleep[3] = { 60, 120, 300 };
+byte arrPositionSleep = 1;
+int arrayLED[4] = { 5, 10, 15, 20 };
+byte arrPositionLED = 0;
+bool pwrDOWN = 0;
+
+// Version number
+byte verHigh = 1;  // Version number major
+byte verLow = 0;   // Version number minor
 
 // AbleButtons
 #define PIN_ENCODER_SW 7                 // SW1 PIN
@@ -77,16 +87,14 @@ using Button = AblePullupClickerButton;  // Button type
 Button SW1(PIN_ENCODER_SW);              // The button to check is on pin
 
 // FastLED
-#define PIN_WS2812 11     // WS2812B Data PIN
-#define NUM_LEDS 2        // Number of WS2812B LEDs
-#define LED_BRIGHTNESS 5  // Set LED brightness
-CRGB leds[NUM_LEDS];      // Set number of LEDs
-bool stateLED0 = 0;       // Track state of LEDs
+#define PIN_WS2812 11  // WS2812B Data PIN
+#define NUM_LEDS 2     // Number of WS2812B LEDs
+CRGB leds[NUM_LEDS];   // Set number of LEDs
+bool stateLED0 = 0;    // Track state of LEDs
 
 // OLED
 #define OLED_ADDRESS 0x3C                   // OLED Address
 Adafruit_SSD1306 OLED(128, 64, &Wire, -1);  // Adafruit OLED Class
-byte oledRotation = 2;                      // OLED default rotation setting
 unsigned long oledSLEEP = 0;                // Counter for turning OLED off
 unsigned long last_change = 0;              // Counter for turning OLED off
 unsigned long now = 0;                      // Counter for turning OLED off
@@ -99,8 +107,6 @@ int encoderPrev = 0;
 bool menuMode = 0;
 int menuPosition = 0;
 bool justWokeUp = 0;
-int arraySleep[3] = { 60, 120, 300 };
-byte settingsSleep = 1;
 
 // IC NTC Thermistor
 #define PIN_THERMISTOR A0  // NTC Thermistor PIN
@@ -131,7 +137,7 @@ void setup() {
 
   // FastLED setup
   FastLED.addLeds<WS2812, PIN_WS2812, GRB>(leds, NUM_LEDS);
-  FastLED.setBrightness(LED_BRIGHTNESS);
+  FastLED.setBrightness(arrayLED[arrPositionLED]);
 
   // OLED setup
   OLED.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS);
@@ -186,7 +192,7 @@ void loop() {
 
   now = millis();
 
-  unsigned int aSleep = arraySleep[settingsSleep];
+  unsigned int aSleep = arraySleep[arrPositionSleep];
   if (now - last_change > 1000 && oledSLEEP <= aSleep) {
     last_change = now;
     oledSLEEP++;
@@ -204,6 +210,9 @@ void loop() {
     OLED.dim(1);
     OLED.ssd1306_command(SSD1306_DISPLAYOFF);
   } else if (oledSLEEP > aSleep) {
+    if (pwrDOWN) {
+      CHARGER.enter_ship_mode();
+    }
     OLED.dim(1);
     OLED.ssd1306_command(SSD1306_DISPLAYOFF);
 
@@ -315,7 +324,7 @@ void menuOption(int encoderCurr) {
   if (menuMode == 0) {
     menuMax = 2;
   } else {
-    menuMax = 6;
+    menuMax = 8;
   }
 
   if (encoderCurr < encoderPrev) {
@@ -371,16 +380,26 @@ void buttonPressed() {
         OLED.setRotation(oledRotation);
         break;
       case 5:  // Set Sleep Timer
-        ++settingsSleep;
-        if (settingsSleep > 2) settingsSleep = 0;
+        ++arrPositionSleep;
+        if (arrPositionSleep > 2) arrPositionSleep = 0;
         break;
-      case 6:  // Exit Setup Menu and save settings to EEPROM
+      case 6:  // Set LED brightness
+        ++arrPositionLED;
+        if (arrPositionLED > 3) arrPositionLED = 0;
+        FastLED.setBrightness(arrayLED[arrPositionLED]);
+        break;
+      case 7:  // Toggle Ship Mode (full power down)
+        pwrDOWN = !pwrDOWN;
+        break;
+      case 8:  // Exit Setup Menu and save settings to EEPROM
         saveEEPROM(E_VCHG, arrPositionVCHG);
         saveEEPROM(E_ICHG, arrPositionICHG);
         saveEEPROM(E_VOTG, arrPositionVOTG);
         saveEEPROM(E_IOTG, arrPositionIOTG);
         saveEEPROM(E_ROTATE, oledRotation);
-        saveEEPROM(E_SLEEP, settingsSleep);
+        saveEEPROM(E_SLEEP, arrPositionSleep);
+        saveEEPROM(E_LED_BR, arrPositionLED);
+        saveEEPROM(E_PWR_DOWN, pwrDOWN);
         menuMode = 0;
         menuPosition = 0;
         break;
@@ -426,62 +445,92 @@ void displaySetupMenu() {
   OLED.setCursor(34, 0);
   OLED.println("SETUP MENU");
   OLED.drawLine(1, 9, 126, 9, SSD1306_WHITE);
-  OLED.setCursor(0, 12);
+  OLED.setCursor(0, 13);
   OLED.print("CHG:  ");
   OLED.print(float(CHARGER.get_charge_voltage() * 0.001), 3);
   OLED.print("V  ");
   OLED.print(float(CHARGER.get_charge_current() * 0.001), 3);
   OLED.println("A");
-  OLED.setCursor(0, 22);
+  OLED.setCursor(0, 23);
   OLED.print("OTG:  ");
   OLED.print(float(CHARGER.get_otg_voltage() * 0.001), 3);
   OLED.print("V  ");
   OLED.print(float(CHARGER.get_otg_current() * 0.001), 3);
   OLED.println("A");
-  OLED.setCursor(7, 32);
-  OLED.print("Rotate Display: ");
+  OLED.setCursor(0, 33);
+  OLED.print("DSP:  ");
   if (oledRotation == 0) {
-    OLED.print("0");
+    OLED.print("  0");
   } else {
     OLED.print("180");
   }
-  OLED.println(char(247));
-  OLED.setCursor(7, 42);
-  OLED.print("Sleep Timer: ");
-  OLED.print(arraySleep[settingsSleep]);
+  OLED.print(char(247));
+  OLED.print("  ");
+  OLED.print(arraySleep[arrPositionSleep]);
   OLED.println("s");
-  // Options
+  OLED.setCursor(0, 43);
+  OLED.print("LED:  ");
+  byte LED = 0;
+  if (arrPositionLED == 0) {
+    OLED.print(" ");
+    LED = 25;
+  } else if (arrPositionLED == 1) {
+    OLED.print(" ");
+    LED = 50;
+  } else if (arrPositionLED == 2) {
+    OLED.print(" ");
+    LED = 75;
+  } else {
+    LED = 100;
+  }
+  OLED.print(LED);
+  OLED.print("%  ");
+  OLED.print("PWR:  ");
+  if (pwrDOWN) {
+    OLED.println("ON");
+  } else {
+    OLED.println("OFF");
+  }
+  OLED.drawLine(1, 52, 126, 52, SSD1306_WHITE);
   OLED.setCursor(53, 57);
-  OLED.print("EXIT");
+  OLED.print("SAVE");
 
   byte X = 0;
   byte Y = 0;
   switch (menuPosition) {
-    case 0:
+    case 0:  // VCHG
       X = 29;
-      Y = 12;
+      Y = 13;
       break;
-    case 1:
+    case 1:  // ICHG
       X = 77;
-      Y = 12;
+      Y = 13;
       break;
-    case 2:
+    case 2:  // VOTG
       X = 29;
-      Y = 22;
+      Y = 23;
       break;
-    case 3:
+    case 3:  // IOTG
       X = 77;
-      Y = 22;
+      Y = 23;
       break;
-    case 4:
-      X = 0;
-      Y = 32;
+    case 4:  // Rotation
+      X = 29;
+      Y = 33;
       break;
-    case 5:
-      X = 0;
-      Y = 42;
+    case 5:  // Sleep
+      X = 65;
+      Y = 33;
       break;
-    case 6:
+    case 6:  // LED
+      X = 29;
+      Y = 43;
+      break;
+    case 7:  // Power
+      X = 101;
+      Y = 43;
+      break;
+    case 8:  // Exit
       X = 46;
       Y = 57;
       break;
@@ -491,22 +540,27 @@ void displaySetupMenu() {
   OLED.display();
 }
 
+// Set the battery charge voltage
 void setChargeVoltage(int volt) {
   CHARGER.set_charge_voltage(arrVCHG[volt]);
 }
 
+// Set the battery charge current
 void setChargeCurrent(int curr) {
   CHARGER.set_charge_current(arrICHG[curr]);
 }
 
+// Set the OTG voltage
 void setOTGVoltage(int volt) {
   CHARGER.set_otg_voltage(arrVOTG[volt]);
 }
 
+// Set the OTG current
 void setOTGCurrent(int curr) {
   CHARGER.set_otg_current(arrIOTG[curr]);
 }
 
+// Calculate the temperature of the NTC mounted next to the BQ25896
 float ntcIC() {
   uint8_t i;
   float average;
@@ -539,6 +593,7 @@ float ntcIC() {
   return steinhart;
 }
 
+// WS2812B LED control
 void showLEDs() {
   stateLED0 = !stateLED0;
   if (CHARGER.is_otg_enabled()) {
@@ -578,6 +633,7 @@ void showLEDs() {
   FastLED.show();
 }
 
+// Save settings to EEPROM
 void saveEEPROM(byte address, byte value) {
   EEPROM.update(address, value);
   leds[1] = CRGB::Yellow;
@@ -587,12 +643,14 @@ void saveEEPROM(byte address, byte value) {
   FastLED.show();
 }
 
+// Read from EEPROM
 byte readEEPROM(byte address) {
   byte val;
   val = EEPROM.read(address);
   return val;
 }
 
+// Save defaults/load saved settings from EEPROM
 void loadEEPROM() {
   if (readEEPROM(E_SAVE) == 1) {
     arrPositionVCHG = readEEPROM(E_VCHG);
@@ -600,14 +658,18 @@ void loadEEPROM() {
     arrPositionVOTG = readEEPROM(E_VOTG);
     arrPositionIOTG = readEEPROM(E_IOTG);
     oledRotation = readEEPROM(E_ROTATE);
-    settingsSleep = readEEPROM(E_SLEEP);
+    arrPositionSleep = readEEPROM(E_SLEEP);
+    arrPositionLED = readEEPROM(E_LED_BR);
+    pwrDOWN = readEEPROM(E_PWR_DOWN);
   } else {
     saveEEPROM(E_VCHG, arrPositionVCHG);
     saveEEPROM(E_ICHG, arrPositionICHG);
     saveEEPROM(E_VOTG, arrPositionVOTG);
     saveEEPROM(E_IOTG, arrPositionIOTG);
     saveEEPROM(E_ROTATE, oledRotation);
-    saveEEPROM(E_SLEEP, settingsSleep);
+    saveEEPROM(E_SLEEP, arrPositionSleep);
+    saveEEPROM(E_LED_BR, arrPositionLED);
+    saveEEPROM(E_PWR_DOWN, pwrDOWN);
     saveEEPROM(E_SAVE, 1);
   }
 
@@ -617,6 +679,7 @@ void loadEEPROM() {
   setOTGCurrent(arrPositionIOTG);
 }
 
+// Display boot info
 void setupDisplay() {
   leds[0] = CRGB::Red;
   leds[1] = CRGB::Red;
@@ -643,8 +706,6 @@ void setupDisplay() {
   FastLED.show();
 
   tone(PIN_BUZZER, 3000, 200);
-  delay(500);
-  tone(PIN_BUZZER, 4000, 200);
 
   delay(2000);
 
