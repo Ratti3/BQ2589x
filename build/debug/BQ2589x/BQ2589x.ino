@@ -7,6 +7,7 @@
 .                                                      https://github.com/Ratti3
 
 This file is part of https://github.com/Ratti3/BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED
+NTC code is from https://learn.adafruit.com/thermistor/using-a-thermistor
 
 BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED is free software: you can redistribute it and/or modify it under the terms of the 
 GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
@@ -48,6 +49,7 @@ You should have received a copy of the GNU General Public License along with BQ2
 #define PIN_INT 9          // BQ25896 INT Digital Input
 #define PIN_PSEL 10        // BQ25896 PSEL Digital Input
 #define BQ2589x_ADDR 0x6B  // BQ25896 I2C Address
+#define STOREVOLTAGE 3750  // VCHG Voltage for storage
 bq2589x CHARGER;
 
 // EEPROM save location, saved as byte
@@ -58,8 +60,8 @@ bq2589x CHARGER;
 #define E_IOTG 40      // arrPositionIOTG
 #define E_ROTATE 50    // oledRotation
 #define E_SLEEP 60     // arraySleep
-#define E_LED_BR 70    //
-#define E_PWR_DOWN 80  //
+#define E_LED_BR 70    // arrPositionLED
+#define E_PWR_DOWN 80  // pwrDown
 
 // Value ranges for settings
 int arrVCHG[5] = { 3840, 3840, 4096, 4192, 4208 };       // Charge volage values
@@ -71,13 +73,13 @@ byte arrPositionVOTG = 1;                                // Set default boost vo
 int arrIOTG[5] = { 500, 750, 1200, 1650, 2150 };         // Boost current values
 byte arrPositionIOTG = 4;                                // Set default boost current to 2.15A
 byte oledRotation = 2;                                   // OLED default rotation setting
-int arraySleep[3] = { 60, 120, 300 };
-byte arrPositionSleep = 1;
-int arrayLED[4] = { 5, 10, 15, 20 };
-byte arrPositionLED = 0;
-bool pwrDOWN = 0;
+int arraySleep[3] = { 60, 120, 300 };                    // Sleep/Ship Mode timeout values in seconds
+byte arrPositionSleep = 1;                               // Default Sleep/Ship Mode value
+int arrayLED[4] = { 5, 10, 15, 20 };                     // LED brightness values
+byte arrPositionLED = 0;                                 // Default LED brightness
+bool pwrDOWN = 0;                                        // Enable/Disable Ship Mode
 
-// Version number
+// Version number and boot text
 #define TEXT1 "BQ25896"
 #define TEXT2 "Battery Charger"
 #define TEXT3 "Ratti3 Tech Corp"
@@ -97,7 +99,7 @@ bool stateLED0 = 0;    // Track state of LEDs
 // OLED
 #define OLED_ADDRESS 0x3C                   // OLED Address
 Adafruit_SSD1306 OLED(128, 64, &Wire, -1);  // Adafruit OLED Class
-unsigned long oledSLEEP = 0;                // Counter for turning OLED off
+unsigned int oledSLEEP = 0;                 // Counter for turning OLED off
 unsigned long last_change = 0;              // Counter for turning OLED off
 unsigned long now = 0;                      // Counter for turning OLED off
 
@@ -105,19 +107,23 @@ unsigned long now = 0;                      // Counter for turning OLED off
 #define PIN_ENCA A4                                 // Rotary Encoder PIN A
 #define PIN_ENCB A5                                 // Rotary Encoder PIN B
 BasicEncoder ENCODER(PIN_ENCA, PIN_ENCB, HIGH, 2);  // BasicEncoder Class
-int encoderPrev = 0;
-bool menuMode = 0;
-int menuPosition = 0;
-bool justWokeUp = 0;
+int encoderPrev = 0;                                // Holds the encoder turns
+bool menuMode = 0;                                  // Default menu mode
+int menuPosition = 0;                               // Default menu position
+bool justWokeUp = 0;                                // Track state of sleep/wake
+#define CHARGETIMER 60                              // Used to turn off charger when charge complete
+byte chargeTimerCount = 0;                          // Used to turn off charger when charge complete
+#define MAINMENUITEMS 2
+#define SETUPMENUITEMS 8
 
 // IC NTC Thermistor
-#define PIN_THERMISTOR A0  // NTC Thermistor PIN
-#define THERMISTORNOMINAL 10000
-#define TEMPERATURENOMINAL 25
-#define NUMSAMPLES 5
-#define BCOEFFICIENT 3425
-#define SERIESRESISTOR 10000
-int samples[NUMSAMPLES];
+#define PIN_THERMISTOR A0        // NTC Thermistor PIN
+#define THERMISTORNOMINAL 10000  // NTC Thermistor nominal resistance
+#define TEMPERATURENOMINAL 25    // NTC Thermistor nominal temperature
+#define NUMSAMPLES 5             // Number of temperature samples to take
+#define BCOEFFICIENT 3425        // NTC Thermistor B Coefficient
+#define SERIESRESISTOR 10000     // NTC Thermistor series resistor
+int samples[NUMSAMPLES];         // Store NTC samples
 
 // Buzzer
 #define PIN_BUZZER 5  // Buzzer PIN
@@ -214,9 +220,15 @@ void loop() {
     OLED.dim(1);
     OLED.ssd1306_command(SSD1306_DISPLAYOFF);
   } else if (oledSLEEP > aSleep) {
+    // If Ship Mode is enabled and timer has elasped, do a full power off
     if (pwrDOWN) {
+      leds[0] = CRGB::Black;
+      leds[1] = CRGB::Black;
+      FastLED.show();
       CHARGER.enter_ship_mode();
     }
+
+    // If timer for OLED display on time has expired, set the OLED contrast to 0m turn off OLED and power down the Arduino
     OLED.dim(1);
     OLED.ssd1306_command(SSD1306_DISPLAYOFF);
 
@@ -229,8 +241,10 @@ void loop() {
     // Disable external pin interrupt on wake up pin.
     detachInterrupt(digitalPinToInterrupt(PIN_ENCODER_SW));
 
+    // Wake up the OLED
     OLED.dim(0);
     OLED.ssd1306_command(SSD1306_DISPLAYON);
+    // Reset the OLED sleep timer
     oledSLEEP = 0;
   }
 }
@@ -241,6 +255,7 @@ void wakeUp() {
   beepBOP(3000, 300);
 }
 
+// Used to check encoder turns using the TimerOne service
 void timer_service() {
   ENCODER.service();
 }
@@ -300,6 +315,7 @@ void displayStatus() {
   OLED.setCursor(97, 56);
   OLED.print("SETUP");
 
+  // Set cursor position for the > selector on the main menu
   byte X = 0;
   byte Y = 0;
   switch (menuPosition) {
@@ -329,13 +345,15 @@ void menuOption(int encoderCurr) {
     return;
   }
 
+  // Set the max
   int menuMax = 0;
   if (menuMode == 0) {
-    menuMax = 2;
+    menuMax = MAINMENUITEMS;
   } else {
-    menuMax = 8;
+    menuMax = SETUPMENUITEMS;
   }
 
+  // Calculate the cursor position for the menus
   if (encoderCurr < encoderPrev) {
     --menuPosition;
     if (menuPosition < 0) menuPosition = menuMax;
@@ -408,7 +426,7 @@ void buttonPressed() {
     }
   } else {
     if (menuPosition == 0) {
-      // Start
+      // Enable/disable charger, can only be enabled if there is and external power supply
       if (CHARGER.is_charge_enabled()) {
         CHARGER.disable_charger();
       } else if (CHARGER.get_vbus_type() > 0 && CHARGER.get_vbus_type() < 7) {
@@ -417,7 +435,7 @@ void buttonPressed() {
         errorBeep = 1;
       }
     } else if (menuPosition == 1) {
-      // OTG
+      // Enable/Disable OTG, only can be enabled if there is a battery and there is no external power source
       if (CHARGER.is_otg_enabled()) {
         CHARGER.disable_otg();
       } else if (CHARGER.get_vbus_type() == 0) {
@@ -426,7 +444,7 @@ void buttonPressed() {
         errorBeep = 1;
       }
     } else if (menuPosition == 2) {
-      // Menu
+      // Display the Setup Menu
       menuMode = 1;
       menuPosition = 0;
       displaySetupMenu();
@@ -520,23 +538,23 @@ void displaySetupMenu() {
       X = 77;
       Y = 23;
       break;
-    case 4:  // Rotation
+    case 4:  // OLED Rotation
       X = 29;
       Y = 33;
       break;
-    case 5:  // Sleep
+    case 5:  // Sleep Timer
       X = 101;
       Y = 33;
       break;
-    case 6:  // LED
+    case 6:  // LED Brightness
       X = 29;
       Y = 43;
       break;
-    case 7:  // Power
+    case 7:  // Ship Mode
       X = 101;
       Y = 43;
       break;
-    case 8:  // Exit
+    case 8:  // Exit to main screen
       X = 46;
       Y = 57;
       break;
@@ -604,13 +622,17 @@ void runMode() {
   stateLED0 = !stateLED0;
   if (CHARGER.is_otg_enabled()) {
     if (stateLED0) {
-      leds[1] = CRGB::Black;
+      leds[0] = CRGB::Black;
     } else {
       leds[1] = CRGB::Blue;
     }
+  } else if (chargeTimerCount > 0 && arrPositionVCHG == 0 && CHARGER.is_charge_enabled()) {
+    if (stateLED0) {
+      leds[0] = CRGB::Black;
+    } else {
+      leds[0] = CRGB::Green;
+    }
   } else {
-    // Call the charge detetor function
-    detectCHG();
     switch (CHARGER.get_charging_status()) {
       case 0:
         leds[0] = CRGB::Black;
@@ -638,6 +660,10 @@ void runMode() {
         break;
     }
   }
+
+  // Call the charge detector function, will blink GREEN if STORAGE voltage has been reached
+  detectCHG();
+
   FastLED.show();
 }
 
@@ -647,15 +673,24 @@ void detectCHG() {
 
   // Determine if STORE mode is on, is charging and VBAT > 3.7V
   // Determine if no battery is connected or charging is finished
-  if (CHARGER.is_charge_enabled() && CHARGER.adc_read_battery_volt() > 3700 && arrPositionVCHG == 0 && CHARGER.get_charge_current() > 100) {
+  if (CHARGER.is_charge_enabled() && CHARGER.adc_read_battery_volt() > STOREVOLTAGE && arrPositionVCHG == 0) {
     x = 1;
-  } else if (CHARGER.is_charge_enabled() && CHARGER.get_charge_current() < 100) {
+    ++chargeTimerCount;
+  } else if (CHARGER.is_charge_enabled() && CHARGER.get_vbus_type() == 3) {
     x = 1;
+    ++chargeTimerCount;
   }
 
   // Disble charger based on previous calculations above
-  if (x) {
+  if (x && chargeTimerCount > CHARGETIMER) {
     CHARGER.disable_charger();
+    for (byte i = 0; i <= 3; i++) {
+      beepBOP(2000, 100);
+      delay(100);
+      beepBOP(3000, 100);
+      delay(100);
+      beepBOP(4000, 100);
+    }
   }
 }
 
@@ -664,7 +699,7 @@ void updateEEPROM(byte address, byte value) {
   EEPROM.update(address, value);
   leds[1] = CRGB::Yellow;
   FastLED.show();
-  delay(250);
+  delay(100);
   leds[1] = CRGB::Black;
   FastLED.show();
 }
@@ -735,13 +770,14 @@ void setupDisplay() {
   OLED.display();
   OLED.invertDisplay(1);
 
+  beepBOP(3000, 200);
+  beepBOP(4000, 200);
+
+  delay(2000);
+
   leds[0] = CRGB::Black;
   leds[1] = CRGB::Black;
   FastLED.show();
-
-  beepBOP(3000, 200);
-
-  delay(2000);
 
   OLED.invertDisplay(0);
 }
