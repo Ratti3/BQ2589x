@@ -78,8 +78,10 @@ byte arrPositionLED = 0;
 bool pwrDOWN = 0;
 
 // Version number
-byte verHigh = 1;  // Version number major
-byte verLow = 0;   // Version number minor
+#define TEXT1 "BQ25896"
+#define TEXT2 "Battery Charger"
+#define TEXT3 "Ratti3 Tech Corp"
+#define VERSION "v1.0"
 
 // AbleButtons
 #define PIN_ENCODER_SW 7                 // SW1 PIN
@@ -177,16 +179,18 @@ void loop() {
   // Check for SW1 (Encoder Switch) presses
   SW1.handle();
 
-  if (SW1.resetClicked()) {  // Reset the click, indicating if it had been clicked.
+  // Detect SW1 press using AbleButtons
+  if (SW1.resetClicked()) {
+    oledSLEEP = 0;
     buttonPressed();
   }
 
   // Check for Encoder turns
   if (ENCODER.get_change()) {
+    oledSLEEP = 0;
     OLED.dim(0);
     OLED.ssd1306_command(SSD1306_DISPLAYON);
-    oledSLEEP = 0;
-    tone(PIN_BUZZER, 6000, 100);
+    beepBOP(6000, 100);
     menuOption(ENCODER.get_count());
   }
 
@@ -231,9 +235,10 @@ void loop() {
   }
 }
 
+// Sleep state tracking
 void wakeUp() {
   justWokeUp = 1;
-  tone(PIN_BUZZER, 3000, 300);
+  beepBOP(3000, 300);
 }
 
 void timer_service() {
@@ -318,6 +323,12 @@ void displayStatus() {
 
 // Runs when the encoder is turned
 void menuOption(int encoderCurr) {
+  // Prevent encoder action if waking up
+  if (justWokeUp) {
+    justWokeUp = 0;
+    return;
+  }
+
   int menuMax = 0;
   if (menuMode == 0) {
     menuMax = 2;
@@ -340,7 +351,7 @@ void buttonPressed() {
   // Set error state
   bool errorBeep = 0;
 
-  // Reset the wake state
+  // Prevent encoder action if waking up
   if (justWokeUp) {
     justWokeUp = 0;
     return;
@@ -422,15 +433,17 @@ void buttonPressed() {
     }
   }
 
+  // Play an error beep if errorBeep == True
   if (errorBeep) {
-    tone(PIN_BUZZER, 4000, 100);
+    beepBOP(4000, 100);
     delay(100);
-    tone(PIN_BUZZER, 2000, 100);
+    beepBOP(2000, 100);
   } else {
-    tone(PIN_BUZZER, 4000, 100);
+    beepBOP(4000, 100);
   }
 }
 
+// Show the setup menu
 void displaySetupMenu() {
   OLED.clearDisplay();
   OLED.setCursor(51, 0);
@@ -487,6 +500,7 @@ void displaySetupMenu() {
   OLED.setCursor(53, 57);
   OLED.print("SAVE");
 
+  // Set the position of the > cursor
   byte X = 0;
   byte Y = 0;
   switch (menuPosition) {
@@ -595,6 +609,7 @@ void runMode() {
       leds[1] = CRGB::Blue;
     }
   } else {
+    // Call the charge detetor function
     detectCHG();
     switch (CHARGER.get_charging_status()) {
       case 0:
@@ -623,15 +638,23 @@ void runMode() {
         break;
     }
   }
-
   FastLED.show();
 }
 
+// Detects charge voltage/current and disables charger if required
 void detectCHG() {
+  bool x = 0;
+
+  // Determine if STORE mode is on, is charging and VBAT > 3.7V
+  // Determine if no battery is connected or charging is finished
   if (CHARGER.is_charge_enabled() && CHARGER.adc_read_battery_volt() > 3700 && arrPositionVCHG == 0 && CHARGER.get_charge_current() > 100) {
-    CHARGER.disable_charger();
+    x = 1;
+  } else if (CHARGER.is_charge_enabled() && CHARGER.get_charge_current() < 100) {
+    x = 1;
   }
-  if (CHARGER.is_charge_enabled() && arrPositionVCHG != 0 && CHARGER.get_charge_current() < 100) {
+
+  // Disble charger based on previous calculations above
+  if (x) {
     CHARGER.disable_charger();
   }
 }
@@ -646,7 +669,7 @@ void updateEEPROM(byte address, byte value) {
   FastLED.show();
 }
 
-// Read from EEPROM
+// Read saved settings from EEPROM
 byte readEEPROM(byte address) {
   byte val;
   val = EEPROM.read(address);
@@ -665,14 +688,17 @@ void loadEEPROM() {
     arrPositionLED = readEEPROM(E_LED_BR);
     pwrDOWN = readEEPROM(E_PWR_DOWN);
   } else {
+    // Save default values
     saveEEPROM();
   }
+  // Write values to BQ25896 register
   setChargeVoltage(arrPositionVCHG);
   setChargeCurrent(arrPositionICHG);
   setOTGVoltage(arrPositionVOTG);
   setOTGCurrent(arrPositionIOTG);
 }
 
+// Save current values to EEPROM
 void saveEEPROM() {
   updateEEPROM(E_VCHG, arrPositionVCHG);
   updateEEPROM(E_ICHG, arrPositionICHG);
@@ -685,6 +711,11 @@ void saveEEPROM() {
   updateEEPROM(E_SAVE, 1);
 }
 
+// Make some noise
+void beepBOP(int frequency, int duration) {
+  tone(PIN_BUZZER, frequency, duration);
+}
+
 // Display boot info
 void setupDisplay() {
   leds[0] = CRGB::Red;
@@ -694,16 +725,13 @@ void setupDisplay() {
   OLED.setRotation(oledRotation);
   OLED.clearDisplay();
   OLED.setCursor(43, 1);
-  OLED.println("BQ25896");
+  OLED.println(TEXT1);
   OLED.setCursor(20, 11);
-  OLED.println("Battery Charger");
+  OLED.println(TEXT2);
   OLED.setCursor(16, 34);
-  OLED.println("Ratti3 Tech Corp");
+  OLED.println(TEXT3);
   OLED.setCursor(50, 55);
-  OLED.print("v");
-  OLED.print(verHigh);
-  OLED.print(".");
-  OLED.println(verLow);
+  OLED.println(VERSION);
   OLED.display();
   OLED.invertDisplay(1);
 
@@ -711,7 +739,7 @@ void setupDisplay() {
   leds[1] = CRGB::Black;
   FastLED.show();
 
-  tone(PIN_BUZZER, 3000, 200);
+  beepBOP(3000, 200);
 
   delay(2000);
 
