@@ -4,7 +4,7 @@
   _|_|_|    _|    _|    _|      _|      _|    _|_|     https://ratti3.blogspot.com
   _|    _|  _|    _|    _|      _|      _|        _|   https://hackaday.io/Ratti3
   _|    _|    _|_|_|      _|_|    _|_|  _|  _|_|_|     https://www.hackster.io/Ratti3
-.                                                      https://github.com/Ratti3
+                                                       https://github.com/Ratti3
 
 Code forked from https://github.com/spencer1979/bq2589x
 
