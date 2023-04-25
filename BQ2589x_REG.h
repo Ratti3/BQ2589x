@@ -22,7 +22,6 @@ You should have received a copy of the GNU General Public License along with BQ2
 
 /* SUGGESTED SETTINGS - RUN IN THIS ORDER
 	0x14: 10000110 Full BQ reset
-
 	0x07: 1xxxxxxx Enable Charging Termination [default]
 		  x1xxxxxx Disable STAT PIN [x0xxxxxx default]
 		  xx00xxxx Disable I2C Watchdog Timer [xx01xxxx default]
@@ -31,7 +30,6 @@ You should have received a copy of the GNU General Public License along with BQ2
 		  xx111111 Set Input Current Limit to 3250mA [xx001010 default]
 	0x02: 11xxxxxx Enable ADC Conversion and Set Rate [00xxxxxx default]
 	0x03: xx1xxxxx Enable OTG [xx0xxxxx default]
-		  xxxx101x Set Minimum System Voltage Limit to 3.5V [default]
 	0x04: x0101111 Set Fast Charge Current Limit to 3008mA [x0100000 2048mA default]
 	0x05: 0001xxxx Set Precharge Current Limit to 128mA [default]
 		  xxxx0011 Set Termination Current Limit to 256mA [default]

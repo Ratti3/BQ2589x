@@ -1,6 +1,11 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\build",
+    "\\build\\debug",
+    "\\build\\debug\\BQ2589x",
+    "\\images"
   ],
+  "SelectedNode": "\\build\\debug\\BQ2589x",
   "PreviewInSolutionExplorer": false
 }

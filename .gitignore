@@ -1,0 +1,6 @@
+
+*.vsidx
+*.sqlite
+*.json
+*.db
+.vs/BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED/v17/.wsuo

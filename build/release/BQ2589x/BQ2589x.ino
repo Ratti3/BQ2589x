@@ -4,7 +4,7 @@
   _|_|_|    _|    _|    _|      _|      _|    _|_|     https://ratti3.blogspot.com
   _|    _|  _|    _|    _|      _|      _|        _|   https://hackaday.io/Ratti3
   _|    _|    _|_|_|      _|_|    _|_|  _|  _|_|_|     https://www.hackster.io/Ratti3
-.                                                      https://github.com/Ratti3
+                                                       https://github.com/Ratti3
 
 This file is part of https://github.com/Ratti3/BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED
 NTC code is from https://learn.adafruit.com/thermistor/using-a-thermistor
@@ -14,9 +14,7 @@ GNU General Public License as published by the Free Software Foundation, either 
 BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
 without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with BQ2589x-ATMEGA32U4-Charger-Powerbank-with-SSD1306-OLED. If not, see <https://www.gnu.org/licenses/>.
-*/
-
-/*  ____________
+    ____________
   -|            |-  A0 : TH_IC   [AI]         NTC for monitoring temperature close to the IC
   -|            |-  A2 : OTG     [DI]         Boost mode enable pin. The boost mode is activated when OTG_CONFIG = 1, OTG pin is high, and no input source is detected at VBUS.
   -|            |-  A3 : CE      [DI]         Active low Charge Enable pin. Battery charging is enabled when CHG_CONFIG = 1 and CE pin = Low. CE pin must be pulled High or Low.
@@ -31,6 +29,10 @@ You should have received a copy of the GNU General Public License along with BQ2
   [DI] = Digital In, [DO] = Digital Out, [AI] = Analog In, [AO] = Analog Out
 */
 
+// Current size of this code on the ATMEGA32U4 (SparkFun Pro Micro)
+// Sketch uses 28536 bytes (99%) of program storage space. Maximum is 28672 bytes.
+// Global variables use 1105 bytes (43%) of dynamic memory, leaving 1455 bytes for local variables. Maximum is 2560 bytes.
+
 // Libraries
 #include <Wire.h>
 #include <EEPROM.h>            // v2.0    | https://github.com/PaulStoffregen/EEPROM
@@ -41,7 +43,7 @@ You should have received a copy of the GNU General Public License along with BQ2
 #include <AbleButtons.h>       // v0.3.0  | https://github.com/jsware/able-buttons
 #include <BasicEncoder.h>      // v1.1.4  | https://github.com/micromouseonline/BasicEncoder
 #include <Adafruit_GFX.h>      // v1.11.5 | https://github.com/adafruit/Adafruit-GFX-Library
-#include <Adafruit_SSD1306.h>  // v2.5.7  | https://github.com/adafruit/Adafruit_SSD1306 (this needs to be modified to remove the splash screen)
+#include <Adafruit_SSD1306.h>  // v2.5.7  | https://github.com/adafruit/Adafruit_SSD1306 (this needs to be modified to remove the splash screen otherwise it will not fit the ATMEGA32U4 flash)
 
 // BQ25896
 #define PIN_OTG A2         // BQ25896 OTG Digital Input
@@ -64,8 +66,8 @@ bq2589x CHARGER;
 #define E_PWR_DOWN 80  // pwrDown
 
 // Value ranges for settings
-int arrVCHG[5] = { 3840, 3840, 4096, 4192, 4208 };       // Charge volage values
-byte arrPositionVCHG = 3;                                // Set default charge voltage to 4.92V
+int arrVCHG[4] = { 3840, 4096, 4192, 4208 };             // Charge voltage values (first one is used to set the STOREVOLTAGE, it is the minimum allowed value)
+byte arrPositionVCHG = 2;                                // Set default charge voltage to 4.192V
 int arrICHG[6] = { 512, 1024, 1536, 2048, 2560, 3072 };  // Charge current values
 byte arrPositionICHG = 5;                                // Set default charge current to 3A
 int arrVOTG[3] = { 4998, 5062, 5126 };                   // Boost voltage values
@@ -74,7 +76,7 @@ int arrIOTG[5] = { 500, 750, 1200, 1650, 2150 };         // Boost current values
 byte arrPositionIOTG = 4;                                // Set default boost current to 2.15A
 byte oledRotation = 2;                                   // OLED default rotation setting
 int arraySleep[3] = { 60, 120, 300 };                    // Sleep/Ship Mode timeout values in seconds
-byte arrPositionSleep = 1;                               // Default Sleep/Ship Mode value
+byte arrPositionSleep = 0;                               // Default Sleep/Ship Mode value
 int arrayLED[4] = { 5, 10, 15, 20 };                     // LED brightness values
 byte arrPositionLED = 0;                                 // Default LED brightness
 bool pwrDOWN = 0;                                        // Enable/Disable Ship Mode
@@ -111,10 +113,8 @@ int encoderPrev = 0;                                // Holds the encoder turns
 bool menuMode = 0;                                  // Default menu mode
 int menuPosition = 0;                               // Default menu position
 bool justWokeUp = 0;                                // Track state of sleep/wake
-#define CHARGETIMER 60                              // Used to turn off charger when charge complete
-byte chargeTimerCount = 0;                          // Used to turn off charger when charge complete
-#define MAINMENUITEMS 2
-#define SETUPMENUITEMS 8
+#define MAINMENUITEMS 2                             // Number of selectable items in the main menu (count from 0)
+#define SETUPMENUITEMS 8                            // Number of selectable items in the setup menu (count from 0)
 
 // IC NTC Thermistor
 #define PIN_THERMISTOR A0        // NTC Thermistor PIN
@@ -188,6 +188,8 @@ void loop() {
   // Detect SW1 press using AbleButtons
   if (SW1.resetClicked()) {
     oledSLEEP = 0;
+    OLED.dim(0);
+    OLED.ssd1306_command(SSD1306_DISPLAYON);
     buttonPressed();
   }
 
@@ -211,11 +213,11 @@ void loop() {
     } else {
       displayStatus();
     }
-    runMode();
+    ledControl();
   } else if (oledSLEEP > aSleep && (CHARGER.is_charge_enabled() || CHARGER.is_otg_enabled())) {
     if (now - last_change > 1000) {
       last_change = now;
-      runMode();
+      ledControl();
     }
     OLED.dim(1);
     OLED.ssd1306_command(SSD1306_DISPLAYOFF);
@@ -228,7 +230,7 @@ void loop() {
       CHARGER.enter_ship_mode();
     }
 
-    // If timer for OLED display on time has expired, set the OLED contrast to 0m turn off OLED and power down the Arduino
+    // If timer for OLED display on time has expired, set the OLED contrast to 0m turn off OLED and power down the ATMEGA32U4
     OLED.dim(1);
     OLED.ssd1306_command(SSD1306_DISPLAYOFF);
 
@@ -339,13 +341,7 @@ void displayStatus() {
 
 // Runs when the encoder is turned
 void menuOption(int encoderCurr) {
-  // Prevent encoder action if waking up
-  if (justWokeUp) {
-    justWokeUp = 0;
-    return;
-  }
-
-  // Set the max
+  // Set the max number of menu items starting from 0
   int menuMax = 0;
   if (menuMode == 0) {
     menuMax = MAINMENUITEMS;
@@ -380,7 +376,7 @@ void buttonPressed() {
     switch (menuPosition) {
       case 0:  // Set Charge Voltage
         ++arrPositionVCHG;
-        if (arrPositionVCHG > 4) arrPositionVCHG = 0;
+        if (arrPositionVCHG > 3) arrPositionVCHG = 0;
         setChargeVoltage(arrPositionVCHG);
         break;
       case 1:  // Set Charge Current
@@ -618,21 +614,16 @@ float ntcIC() {
 }
 
 // WS2812B LED control
-void runMode() {
+void ledControl() {
   stateLED0 = !stateLED0;
+  // Blink LEDs blue when OTG in on
   if (CHARGER.is_otg_enabled()) {
     if (stateLED0) {
       leds[0] = CRGB::Black;
     } else {
-      leds[1] = CRGB::Blue;
+      leds[0] = CRGB::Blue;
     }
-  } else if (chargeTimerCount > 0 && arrPositionVCHG == 0 && CHARGER.is_charge_enabled()) {
-    if (stateLED0) {
-      leds[0] = CRGB::Black;
-    } else {
-      leds[0] = CRGB::Green;
-    }
-  } else {
+  } else { // Blink the LEDs depending on the charging status
     switch (CHARGER.get_charging_status()) {
       case 0:
         leds[0] = CRGB::Black;
@@ -651,13 +642,6 @@ void runMode() {
           leds[0] = CRGB::Red;
         }
         break;
-      case 3:
-        if (stateLED0) {
-          leds[0] = CRGB::Black;
-        } else {
-          leds[0] = CRGB::Green;
-        }
-        break;
     }
   }
 
@@ -670,20 +654,19 @@ void runMode() {
 // Detects charge voltage/current and disables charger if required
 void detectCHG() {
   bool x = 0;
-
   // Determine if STORE mode is on, is charging and VBAT > 3.7V
-  // Determine if no battery is connected or charging is finished
+  // Determine if no battery is connected
+  // Check if charging  is finished
   if (CHARGER.is_charge_enabled() && CHARGER.adc_read_battery_volt() > STOREVOLTAGE && arrPositionVCHG == 0) {
     x = 1;
-    ++chargeTimerCount;
-  } else if (CHARGER.is_charge_enabled() && CHARGER.get_vbus_type() == 3) {
+  } else if (CHARGER.is_charge_enabled() && CHARGER.adc_read_charge_current() < 100) {
     x = 1;
-    ++chargeTimerCount;
+  } else if (CHARGER.get_charging_status() == 3) {
+    x = 1;
   }
 
   // Disble charger based on previous calculations above
-  if (x && chargeTimerCount > CHARGETIMER) {
-    CHARGER.disable_charger();
+  if (x) {
     for (byte i = 0; i <= 3; i++) {
       beepBOP(2000, 100);
       delay(100);
@@ -691,13 +674,14 @@ void detectCHG() {
       delay(100);
       beepBOP(4000, 100);
     }
+    CHARGER.disable_charger();
   }
 }
 
 // Save settings to EEPROM
 void updateEEPROM(byte address, byte value) {
   EEPROM.update(address, value);
-  leds[1] = CRGB::Yellow;
+  leds[1] = CRGB::HotPink;
   FastLED.show();
   delay(100);
   leds[1] = CRGB::Black;
