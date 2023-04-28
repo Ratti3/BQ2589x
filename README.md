@@ -4,7 +4,7 @@ Requires masking out //#include "splash.h" in file Adafruit_SSD1306.cpp in the A
 <br><br>
 Youtube Video:
 <a href="https://youtu.be/tIczeEKHdcY">
-<img src="https://img.youtube.com/vi/tIczeEKHdcY/0.jpg">
+<img src="images/YT.png">
 </a>
 <br><br>
 <img src="images/03.jpg" /><br>
