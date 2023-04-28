@@ -2,8 +2,10 @@
 <br>
 Requires masking out //#include "splash.h" in file Adafruit_SSD1306.cpp in the Adafruit_SSD1306 library, otherwise it does not fit the ATMEGA32U4.
 <br>
-<a href="https://youtu.be/tIczeEKHdcY?autoplay=1&mute=1">Youtube Video</a>
-<br>
+<a href="https://youtu.be/tIczeEKHdcY">
+<img src="https://img.youtube.com/vi/tIczeEKHdcY/0.jpg" style="width:100%;">
+</a>
+<br><br>
 <img src="images/Cover.jpg" /><br>
 <img src="images/03.jpg" /><br>
 <img src="images/08.jpg" /><br>
